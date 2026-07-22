@@ -1,0 +1,35 @@
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+logs/
+.env
+.env.*
+.venv/
+venv/
+*.log
+
+# Frontend/Node
+node_modules/
+.next/
+out/
+build/
+dist/
+
+# IDE/OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Scratch and temp files
+*project_structure*.txt
+1project_structure*.txt
+
+# Data and Models
+data/
+models/
+
+# Scratch and artifacts
+artifacts/
