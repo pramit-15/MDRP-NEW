@@ -17,7 +17,7 @@ export async function parsePdf(
     "/api/v1/parse-pdf",
     formData,
     {
-      headers: { "Content-Type": "multipart/form-data" },
+      timeout: 120000,
       onUploadProgress: (evt) => {
         if (evt.total && onProgress) {
           onProgress(Math.round((evt.loaded * 100) / evt.total));

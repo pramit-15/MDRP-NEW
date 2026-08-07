@@ -13,6 +13,7 @@ export function useHistory(params: { skip?: number; limit?: number } = {}) {
 
   return useQuery({
     queryKey: ["history", params],
+    retry: false, // Don't retry on auth failures
     queryFn: async () => {
       const token = await getToken();
       if (!token) throw new Error("Not authenticated");
@@ -27,6 +28,7 @@ export function useHistoryDetail(id: string | null) {
   return useQuery({
     queryKey: ["history", id],
     enabled: !!id,
+    retry: false, // Don't retry on auth failures
     queryFn: async () => {
       const token = await getToken();
       if (!token) throw new Error("Not authenticated");

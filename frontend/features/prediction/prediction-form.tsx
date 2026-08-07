@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import {
   User, Activity, FlaskConical, ClipboardList, CheckCircle2,
-  ChevronLeft, ChevronRight, Info, Calculator, Upload
+  ChevronLeft, ChevronRight, Info, Calculator
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -16,10 +16,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Separator } from "@/components/ui/separator";
 
 import { usePredictMutation } from "@/hooks/use-predictions";
 import { calculateBMI } from "@/lib/utils";
@@ -517,41 +515,54 @@ interface PredictionFormProps {
   prefillData?: ParsedPdfFields;
 }
 
+function mapPdfPrefill(prefillData?: ParsedPdfFields): Partial<PredictionFormData> {
+  if (!prefillData) {
+    return {};
+  }
+
+  return {
+    age: prefillData.age ?? undefined,
+    systolic_bp: prefillData.systolic_bp ?? undefined,
+    diastolic_bp: prefillData.diastolic_bp ?? undefined,
+    glucose: prefillData.glucose ?? undefined,
+    bgr: prefillData.bgr ?? undefined,
+    hba1c: prefillData.hba1c ?? undefined,
+    insulin: prefillData.insulin ?? undefined,
+    chol: prefillData.chol ?? undefined,
+    ldl: prefillData.ldl ?? undefined,
+    hdl: prefillData.hdl ?? undefined,
+    triglycerides: prefillData.triglycerides ?? undefined,
+    sc: prefillData.sc ?? undefined,
+    bu: prefillData.bu ?? undefined,
+    sod: prefillData.sod ?? undefined,
+    pot: prefillData.pot ?? undefined,
+    egfr: prefillData.egfr ?? undefined,
+    htn: prefillData.htn != null ? String(prefillData.htn) as "0" | "1" : undefined,
+    dm: prefillData.dm != null ? String(prefillData.dm) as "0" | "1" : undefined,
+    cad: prefillData.cad != null ? String(prefillData.cad) as "0" | "1" : undefined,
+    appet: prefillData.appet != null ? String(prefillData.appet) as "0" | "1" : undefined,
+    pe: prefillData.pe != null ? String(prefillData.pe) as "0" | "1" : undefined,
+    ane: prefillData.ane != null ? String(prefillData.ane) as "0" | "1" : undefined,
+  };
+}
+
 export function PredictionForm({ prefillData }: PredictionFormProps) {
   const [step, setStep] = useState(1);
   const router = useRouter();
   const { mutateAsync: predict, isPending } = usePredictMutation();
+  const prefillValues = useMemo(() => mapPdfPrefill(prefillData), [prefillData]);
 
   const form = useForm<PredictionFormData>({
     resolver: zodResolver(predictionSchema),
-    defaultValues: prefillData
-      ? {
-          age: prefillData.age ?? undefined,
-          systolic_bp: prefillData.systolic_bp ?? undefined,
-          diastolic_bp: prefillData.diastolic_bp ?? undefined,
-          glucose: prefillData.glucose ?? undefined,
-          bgr: prefillData.bgr ?? undefined,
-          hba1c: prefillData.hba1c ?? undefined,
-          insulin: prefillData.insulin ?? undefined,
-          chol: prefillData.chol ?? undefined,
-          ldl: prefillData.ldl ?? undefined,
-          hdl: prefillData.hdl ?? undefined,
-          triglycerides: prefillData.triglycerides ?? undefined,
-          sc: prefillData.sc ?? undefined,
-          bu: prefillData.bu ?? undefined,
-          sod: prefillData.sod ?? undefined,
-          pot: prefillData.pot ?? undefined,
-          egfr: prefillData.egfr ?? undefined,
-          htn: prefillData.htn != null ? String(prefillData.htn) as "0" | "1" : undefined,
-          dm: prefillData.dm != null ? String(prefillData.dm) as "0" | "1" : undefined,
-          cad: prefillData.cad != null ? String(prefillData.cad) as "0" | "1" : undefined,
-          appet: prefillData.appet != null ? String(prefillData.appet) as "0" | "1" : undefined,
-          pe: prefillData.pe != null ? String(prefillData.pe) as "0" | "1" : undefined,
-          ane: prefillData.ane != null ? String(prefillData.ane) as "0" | "1" : undefined,
-        }
-      : {},
+    defaultValues: prefillValues,
     mode: "onChange",
   });
+
+  useEffect(() => {
+    if (prefillData) {
+      form.reset(prefillValues);
+    }
+  }, [form, prefillData, prefillValues]);
 
   const handleNext = useCallback(async () => {
     if (step < 5) setStep((s) => s + 1);

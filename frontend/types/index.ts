@@ -62,6 +62,36 @@ export interface ScoreDetail {
   clinical: number;
 }
 
+// ─── SHAP Explainability Types ─────────────────────────────────────────────
+
+export interface ShapContribution {
+  feature: string;
+  value: number;
+  contribution: number;
+}
+
+export interface DiseaseExplanation {
+  base_value?: number;
+  expected_value?: number;
+  shap_values?: number[];
+  feature_importance?: ShapContribution[];
+  top_features?: ShapContribution[];
+  positive_contributors?: ShapContribution[];
+  negative_contributors?: ShapContribution[];
+  explanation_summary?: string;
+}
+
+export interface ExplainabilityResult {
+  shap_values?: Record<string, number[]>;
+  feature_importance?: Record<string, ShapContribution[]>;
+  top_features?: Record<string, ShapContribution[]>;
+  explanation_summary?: Record<string, string>;
+  positive_contributors?: Record<string, ShapContribution[]>;
+  negative_contributors?: Record<string, ShapContribution[]>;
+  expected_value?: Record<string, number>;
+  base_value?: Record<string, number>;
+}
+
 export interface PredictionResponse {
   success: boolean;
   heart: number;
@@ -76,6 +106,7 @@ export interface PredictionResponse {
   health_condition: Record<string, number>;
   used_defaults: string[];
   prediction_id?: string;
+  explainability?: ExplainabilityResult;
 }
 
 // ─── History Types ────────────────────────────────────────────────────────────

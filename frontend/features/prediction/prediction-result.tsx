@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Progress } from "@/components/ui/progress";
-import type { HistoryDetail, PredictionResponse } from "@/types";
+import type { HistoryDetail, PredictionResponse, ShapContribution, ExplainabilityResult } from "@/types";
 import { getRiskLevel, getRiskLabel, getRiskBgColor } from "@/types";
 import { formatFieldName } from "@/lib/utils";
 import {
@@ -142,105 +142,158 @@ function ScoreBreakdown({
   );
 }
 
-// ─── SHAP-style Feature Importance ───────────────────────────────────────────
+// ─── Real SHAP Feature Importance ─────────────────────────────────────────────
+
+const FEATURE_LABELS: Record<string, string> = {
+  age: "Age", glucose: "Fasting Glucose", hba1c: "HbA1c", bmi: "BMI",
+  trestbps: "Systolic BP", bloodpressure: "Diastolic BP", chol: "Cholesterol",
+  ldl: "LDL", hdl: "HDL", triglycerides: "Triglycerides", sc: "Creatinine",
+  bu: "Blood Urea", egfr: "eGFR", sod: "Sodium", pot: "Potassium",
+  htn: "Hypertension", dm: "Diabetes", cad: "CAD", pe: "Pedal Edema",
+  ane: "Anemia", appet: "Appetite", cp: "Chest Pain", thalach: "Max Heart Rate",
+  exang: "Exercise Angina", oldpeak: "ST Depression", fbs: "Fasting BS",
+  ca: "Major Vessels", thal: "Thalassemia", skin: "Skin Thickness",
+  insulin: "Insulin", preg: "Pregnancies", dpf: "DPF", sex: "Sex",
+};
+
+function SHAPContributionBar({ item }: { item: { name: string; value: number; contribution: number } }) {
+  const maxBar = 100;
+  const width = Math.min(Math.abs(item.contribution) * 400, maxBar);
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center justify-between text-sm">
+        <div className="flex items-center gap-1.5">
+          <span className="font-medium">{item.name}</span>
+          <span className="text-xs text-muted-foreground">{item.value.toFixed(2)}</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          {item.contribution > 0 ? (
+            <TrendingUp className="h-3.5 w-3.5 text-red-500" />
+          ) : item.contribution < 0 ? (
+            <TrendingDown className="h-3.5 w-3.5 text-emerald-500" />
+          ) : (
+            <Minus className="h-3.5 w-3.5 text-muted-foreground" />
+          )}
+          <span className={`font-semibold text-xs ${item.contribution > 0 ? "text-red-500" : item.contribution < 0 ? "text-emerald-500" : "text-muted-foreground"}`}>
+            {item.contribution > 0 ? "+" : ""}{item.contribution.toFixed(4)}
+          </span>
+        </div>
+      </div>
+      <div className="flex items-center gap-2 h-2">
+        <div className="flex-1 flex justify-end">
+          {item.contribution < 0 && (
+            <div className="h-2 rounded-full bg-emerald-500" style={{ width: `${width}%` }} />
+          )}
+        </div>
+        <div className="w-px h-full bg-border" />
+        <div className="flex-1">
+          {item.contribution > 0 && (
+            <div className="h-2 rounded-full bg-red-500" style={{ width: `${width}%` }} />
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function FeatureContributions({
+  explainability,
   inputsUsed,
-  heartRisk,
-  diabetesRisk,
-  kidneyRisk,
 }: {
+  explainability?: ExplainabilityResult;
   inputsUsed?: Record<string, number>;
-  heartRisk: number;
-  diabetesRisk: number;
-  kidneyRisk: number;
 }) {
-  // Generate contribution data from known risk-associated fields
-  const contributions = [
-    { name: "HbA1c", value: inputsUsed?.hba1c ? (inputsUsed.hba1c > 6.5 ? 8.2 : inputsUsed.hba1c > 5.7 ? 4.1 : -3.2) : 0, feature: "hba1c", provided: !!inputsUsed?.hba1c },
-    { name: "Fasting Glucose", value: inputsUsed?.glucose ? (inputsUsed.glucose > 126 ? 7.1 : inputsUsed.glucose > 100 ? 3.5 : -2.8) : 0, feature: "glucose", provided: !!inputsUsed?.glucose },
-    { name: "BMI", value: inputsUsed?.bmi ? (inputsUsed.bmi > 30 ? 6.3 : inputsUsed.bmi > 25 ? 2.8 : -2.5) : 0, feature: "bmi", provided: !!inputsUsed?.bmi },
-    { name: "Systolic BP", value: inputsUsed?.trestbps ? (inputsUsed.trestbps > 140 ? 5.9 : inputsUsed.trestbps > 120 ? 2.2 : -1.8) : 0, feature: "trestbps", provided: !!inputsUsed?.trestbps },
-    { name: "Cholesterol", value: inputsUsed?.chol ? (inputsUsed.chol > 240 ? 4.8 : inputsUsed.chol > 200 ? 1.9 : -1.5) : 0, feature: "chol", provided: !!inputsUsed?.chol },
-    { name: "Creatinine", value: inputsUsed?.sc ? (inputsUsed.sc > 1.2 ? 6.7 : inputsUsed.sc > 0.9 ? 2.4 : -2.1) : 0, feature: "sc", provided: !!inputsUsed?.sc },
-    { name: "eGFR", value: inputsUsed?.egfr ? (inputsUsed.egfr < 60 ? 7.3 : inputsUsed.egfr < 90 ? 2.1 : -3.1) : 0, feature: "egfr", provided: !!inputsUsed?.egfr },
-    { name: "Age", value: inputsUsed?.age ? (inputsUsed.age > 60 ? 4.2 : inputsUsed.age > 45 ? 1.8 : -0.9) : 0, feature: "age", provided: !!inputsUsed?.age },
-  ]
-    .filter((c) => c.provided && c.value !== 0)
-    .sort((a, b) => Math.abs(b.value) - Math.abs(a.value))
-    .slice(0, 8);
+  // Try to get real SHAP data first
+  const hasRealShap = explainability?.feature_importance && Object.keys(explainability.feature_importance).length > 0;
 
-  if (contributions.length === 0) {
+  if (hasRealShap) {
+    // Aggregate top features across all diseases
+    const allContribs: Array<{ name: string; value: number; contribution: number; disease: string }> = [];
+    const diseases = ["heart", "diabetes", "kidney"];
+    for (const disease of diseases) {
+      const feats = explainability!.feature_importance![disease] || [];
+      feats.slice(0, 5).forEach((f: ShapContribution) => {
+        allContribs.push({
+          name: FEATURE_LABELS[f.feature] || f.feature,
+          value: f.value,
+          contribution: f.contribution,
+          disease,
+        });
+      });
+    }
+    // Deduplicate by feature name, keeping highest absolute contribution
+    const seen = new Map<string, typeof allContribs[0]>();
+    for (const c of allContribs) {
+      const existing = seen.get(c.name);
+      if (!existing || Math.abs(c.contribution) > Math.abs(existing.contribution)) {
+        seen.set(c.name, c);
+      }
+    }
+    const top = Array.from(seen.values()).sort((a, b) => Math.abs(b.contribution) - Math.abs(a.contribution)).slice(0, 8);
+
+    // Per-disease SHAP summaries
+    const summaries = explainability!.explanation_summary || {};
+
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Feature Contributions</CardTitle>
+          <CardTitle className="text-base flex items-center gap-2">
+            <TrendingUp className="h-5 w-5 text-blue-600" />
+            SHAP Feature Importance (Real ML Explanations)
+          </CardTitle>
+          <CardDescription>Actual SHAP values computed per prediction — positive = increases risk</CardDescription>
         </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground text-sm">Provide more health data to see which factors influenced your risk score.</p>
+        <CardContent className="space-y-6">
+          <div className="space-y-3">
+            {top.map((item) => <SHAPContributionBar key={item.name} item={item} />)}
+            <div className="flex justify-between text-xs text-muted-foreground pt-2 border-t border-border">
+              <span>← Decreases risk</span>
+              <span>Increases risk →</span>
+            </div>
+          </div>
+          {(summaries.heart || summaries.diabetes || summaries.kidney) && (
+            <div className="space-y-2 pt-2 border-t border-border">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">AI Summary</p>
+              {["heart", "diabetes", "kidney"].map((d) => summaries[d] && (
+                <p key={d} className="text-xs text-muted-foreground">
+                  <span className="font-medium capitalize text-foreground">{d}: </span>{summaries[d]}
+                </p>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
     );
   }
+
+  // Fallback: heuristic visualization if no SHAP data
+  const contributions = [
+    { name: "HbA1c", value: inputsUsed?.hba1c ?? 0, contribution: inputsUsed?.hba1c ? (inputsUsed.hba1c > 6.5 ? 0.082 : inputsUsed.hba1c > 5.7 ? 0.041 : -0.032) : 0, provided: !!inputsUsed?.hba1c },
+    { name: "Fasting Glucose", value: inputsUsed?.glucose ?? 0, contribution: inputsUsed?.glucose ? (inputsUsed.glucose > 126 ? 0.071 : inputsUsed.glucose > 100 ? 0.035 : -0.028) : 0, provided: !!inputsUsed?.glucose },
+    { name: "BMI", value: inputsUsed?.bmi ?? 0, contribution: inputsUsed?.bmi ? (inputsUsed.bmi > 30 ? 0.063 : inputsUsed.bmi > 25 ? 0.028 : -0.025) : 0, provided: !!inputsUsed?.bmi },
+    { name: "Creatinine", value: inputsUsed?.sc ?? 0, contribution: inputsUsed?.sc ? (inputsUsed.sc > 1.2 ? 0.067 : inputsUsed.sc > 0.9 ? 0.024 : -0.021) : 0, provided: !!inputsUsed?.sc },
+    { name: "eGFR", value: inputsUsed?.egfr ?? 0, contribution: inputsUsed?.egfr ? (inputsUsed.egfr < 60 ? 0.073 : inputsUsed.egfr < 90 ? 0.021 : -0.031) : 0, provided: !!inputsUsed?.egfr },
+  ].filter(c => c.provided && c.contribution !== 0).sort((a, b) => Math.abs(b.contribution) - Math.abs(a.contribution));
+
+  if (contributions.length === 0) return (
+    <Card>
+      <CardHeader><CardTitle className="text-base">SHAP Feature Contributions</CardTitle></CardHeader>
+      <CardContent><p className="text-muted-foreground text-sm">Provide more health data to see which factors influenced your risk score.</p></CardContent>
+    </Card>
+  );
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="text-base flex items-center gap-2">
           <TrendingUp className="h-5 w-5 text-blue-600" />
-          Feature Contributions (SHAP-style)
+          Feature Contributions
         </CardTitle>
-        <CardDescription>
-          Positive values increase risk, negative values reduce risk
-        </CardDescription>
+        <CardDescription>Positive values increase risk, negative values reduce risk</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
-          {contributions.map((item) => (
-            <div key={item.feature} className="space-y-1">
-              <div className="flex items-center justify-between text-sm">
-                <span className="font-medium">{item.name}</span>
-                <div className="flex items-center gap-1.5">
-                  {item.value > 0 ? (
-                    <TrendingUp className="h-3.5 w-3.5 text-red-500" />
-                  ) : item.value < 0 ? (
-                    <TrendingDown className="h-3.5 w-3.5 text-emerald-500" />
-                  ) : (
-                    <Minus className="h-3.5 w-3.5 text-muted-foreground" />
-                  )}
-                  <span
-                    className={`font-semibold ${
-                      item.value > 0 ? "text-red-500" : item.value < 0 ? "text-emerald-500" : "text-muted-foreground"
-                    }`}
-                  >
-                    {item.value > 0 ? "+" : ""}{item.value.toFixed(1)}%
-                  </span>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 h-2">
-                {/* Negative bar (left) */}
-                <div className="flex-1 flex justify-end">
-                  {item.value < 0 && (
-                    <div
-                      className="h-2 rounded-full bg-emerald-500"
-                      style={{ width: `${Math.abs(item.value) * 8}%`, maxWidth: "100%" }}
-                    />
-                  )}
-                </div>
-                {/* Center line */}
-                <div className="w-px h-full bg-border" />
-                {/* Positive bar (right) */}
-                <div className="flex-1">
-                  {item.value > 0 && (
-                    <div
-                      className="h-2 rounded-full bg-red-500"
-                      style={{ width: `${Math.abs(item.value) * 8}%`, maxWidth: "100%" }}
-                    />
-                  )}
-                </div>
-              </div>
-            </div>
-          ))}
+          {contributions.map((item) => <SHAPContributionBar key={item.name} item={item} />)}
           <div className="flex justify-between text-xs text-muted-foreground mt-2 pt-2 border-t border-border">
             <span>← Reduces risk</span>
             <span>Increases risk →</span>
@@ -392,6 +445,7 @@ export function PredictionResultView({
   const healthCondition = result.health_condition || {};
   const usedDefaults = result.used_defaults || [];
   const inputsUsed = result.inputs_used;
+  const explainability = (result as PredictionResponse).explainability;
 
   return (
     <div className="space-y-6">
@@ -484,10 +538,8 @@ export function PredictionResultView({
 
       {/* SHAP Feature Contributions */}
       <FeatureContributions
+        explainability={explainability}
         inputsUsed={inputsUsed as Record<string, number>}
-        heartRisk={heart}
-        diabetesRisk={diabetes}
-        kidneyRisk={kidney}
       />
 
       {/* Health Condition Distribution */}

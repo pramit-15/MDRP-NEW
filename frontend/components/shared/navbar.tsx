@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
-import { Bell, Moon, Sun, Search, Activity } from "lucide-react";
-import { useTheme } from "next-themes";
+import { Moon, Sun, Activity } from "lucide-react";
+import { useTheme } from "@/providers/theme-provider";
 import { Button } from "@/components/ui/button";
 import { useHealthCheck } from "@/hooks/use-health";
 import { cn } from "@/lib/utils";
@@ -68,7 +68,8 @@ function ApiStatus() {
 
 export function Navbar() {
   const { user } = useUser();
-  const { theme, setTheme } = useTheme();
+  const { mounted, resolvedTheme, setTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
 
   return (
     <header className="sticky top-0 z-40 flex h-16 items-center border-b border-border bg-background/80 backdrop-blur-xl px-6 gap-4">
@@ -92,11 +93,13 @@ export function Navbar() {
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+          onClick={() => setTheme(isDark ? "light" : "dark")}
           className="text-muted-foreground"
           aria-label="Toggle theme"
         >
-          {theme === "dark" ? (
+          {!mounted ? (
+            <span className="h-4 w-4" aria-hidden="true" />
+          ) : isDark ? (
             <Sun className="h-4 w-4" />
           ) : (
             <Moon className="h-4 w-4" />

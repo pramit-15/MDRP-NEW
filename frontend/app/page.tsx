@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { auth } from "@clerk/nextjs/server";
 import { Heart, Brain, Activity, ArrowRight, Shield, Zap, BarChart3, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -36,7 +37,10 @@ const benefits = [
   "Dark mode & mobile-ready",
 ];
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const { userId } = await auth();
+  const isSignedIn = Boolean(userId);
+
   return (
     <main className="min-h-screen bg-background">
       {/* Navigation */}
@@ -49,12 +53,20 @@ export default function LandingPage() {
             <span className="font-bold text-lg tracking-tight">MDRP</span>
           </div>
           <div className="flex items-center gap-3">
-            <Link href="/login">
-              <Button variant="ghost" size="sm">Sign In</Button>
-            </Link>
-            <Link href="/register">
-              <Button size="sm">Get Started</Button>
-            </Link>
+            {isSignedIn ? (
+              <Link href="/dashboard">
+                <Button size="sm">Dashboard</Button>
+              </Link>
+            ) : (
+              <>
+                <Link href="/login">
+                  <Button variant="ghost" size="sm">Sign In</Button>
+                </Link>
+                <Link href="/register">
+                  <Button size="sm">Get Started</Button>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </nav>
@@ -79,17 +91,28 @@ export default function LandingPage() {
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
-          <Link href="/register">
-            <Button size="xl" className="group">
-              Start Free Assessment
-              <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
-            </Button>
-          </Link>
-          <Link href="/login">
-            <Button size="xl" variant="outline">
-              View Demo Dashboard
-            </Button>
-          </Link>
+          {isSignedIn ? (
+            <Link href="/dashboard">
+              <Button size="xl" className="group">
+                Go to Dashboard
+                <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
+              </Button>
+            </Link>
+          ) : (
+            <>
+              <Link href="/register">
+                <Button size="xl" className="group">
+                  Start Free Assessment
+                  <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                </Button>
+              </Link>
+              <Link href="/login">
+                <Button size="xl" variant="outline">
+                  View Demo Dashboard
+                </Button>
+              </Link>
+            </>
+          )}
         </div>
 
         {/* Stats */}
@@ -143,12 +166,21 @@ export default function LandingPage() {
                 Built on production ML models trained on clinical datasets. Every prediction 
                 is transparent, explainable, and backed by both machine learning and clinical risk scoring.
               </p>
-              <Link href="/register">
-                <Button className="group">
-                  Get Started Free
-                  <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                </Button>
-              </Link>
+              {isSignedIn ? (
+                <Link href="/dashboard">
+                  <Button className="group">
+                    Open Dashboard
+                    <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                  </Button>
+                </Link>
+              ) : (
+                <Link href="/register">
+                  <Button className="group">
+                    Get Started Free
+                    <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                  </Button>
+                </Link>
+              )}
             </div>
             <div className="grid grid-cols-1 gap-3">
               {benefits.map((benefit) => (

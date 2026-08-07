@@ -90,16 +90,15 @@ class PredictionService:
     def _predict_ml(self, name: str, full_input: dict) -> float:
         model = model_loader.get_model(name)
         if model is None:
-            # We maintain the RISK_THRESHOLD fallback to preserve existing behavior,
-            # but we could raise ModelLoadingError here if strict failure is desired.
             return RISK_THRESHOLD
         
         features = model_loader.get_features(name)
-        X = map_input(full_input, features)
-        X = self._apply_scaler(X, name)
+        from backend.utils.input_mapper import map_input_df
+        X = map_input_df(full_input, features)
+        X_arr = self._apply_scaler(X.values, name)
         
         try:
-            return float(model.predict_proba(X)[0][1])
+            return float(model.predict_proba(X_arr)[0][1])
         except Exception as e:
             self.logger.exception(f"Prediction failed for {name}")
             raise PredictionError(f"Prediction failed for {name}: {str(e)}")
@@ -164,9 +163,9 @@ class PredictionService:
         for name in ["heart", "diabetes", "kidney"]:
             features = model_loader.get_features(name)
             X_mapped = map_input(full_input, features)
-            X_scaled = self._apply_scaler(X_mapped, name)
-            
-            res = explainability_service.generate_explanation(name, features, full_input, X_scaled)
+            # IMPORTANT: TreeExplainer needs UNSCALED data to produce meaningful SHAP values.
+            # The model pipeline internally applies scaling, so we pass the raw feature values.
+            res = explainability_service.generate_explanation(name, features, full_input, X_mapped)
             if res:
                 for key in explainability.keys():
                     if key in res:

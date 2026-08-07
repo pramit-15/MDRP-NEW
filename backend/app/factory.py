@@ -1,3 +1,4 @@
+import os
 import time
 import uuid
 from flask import Flask, g, request
@@ -7,11 +8,17 @@ from flask_talisman import Talisman
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
+# Load .env if present (for local dev)
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 from backend.app.config import Config
 from backend.utils.logger import get_logger
 from backend.database import init_db
 from backend.services.model_loader import model_loader
-from backend.utils.exceptions import ModelLoadingError
 
 logger = get_logger("factory")
 
@@ -29,7 +36,9 @@ def create_app(config_class=Config):
     
     # Initialize Security Extensions
     CORS(app, resources={r"/api/*": {"origins": "*"}}) # Customize origins in production
-    Talisman(app, content_security_policy=None) # CSP can be strict, setting to None for API mostly, or customize
+    # Talisman: disable force_https in dev/testing so local http:// calls work
+    is_prod = os.environ.get("FLASK_ENV", "development").lower() == "production"
+    Talisman(app, content_security_policy=None, force_https=is_prod)
     
     # Rate Limiter
     limiter = Limiter(
@@ -41,6 +50,18 @@ def create_app(config_class=Config):
     
     # Initialize Database engine and session factory
     init_db(config_class.DATABASE_URL)
+    
+    # Auto-create tables if they don't exist (dev-friendly; Alembic handles production)
+    try:
+        from backend.database.base import Base
+        from backend.database import models  # noqa: F401 — imports all model classes
+        from backend.database.database import get_engine
+        eng = get_engine()
+        if eng is not None:
+            Base.metadata.create_all(bind=eng)
+            logger.info("Database tables verified/created.")
+    except Exception as e:
+        logger.error(f"Database table creation failed: {e}")
     
     # Initialize Swagger
     app.config['SWAGGER'] = {

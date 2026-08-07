@@ -1,7 +1,15 @@
 import { SignUp } from "@clerk/nextjs";
+import { auth } from "@clerk/nextjs/server";
 import { Activity, Sparkles } from "lucide-react";
+import { redirect } from "next/navigation";
 
-export default function RegisterPage() {
+export default async function RegisterPage() {
+  const { userId } = await auth();
+
+  if (userId) {
+    redirect("/dashboard");
+  }
+
   return (
     <div className="min-h-screen flex">
       {/* Left Panel */}
@@ -48,7 +56,7 @@ export default function RegisterPage() {
           </div>
         </div>
         <p className="relative z-10 text-emerald-200 text-xs">
-          Your health data is protected by Clerk's enterprise-grade security.
+          Your health data is protected by Clerk&apos;s enterprise-grade security.
         </p>
       </div>
 

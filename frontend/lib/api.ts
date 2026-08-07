@@ -4,36 +4,12 @@ import axios from "axios";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
-// Client-side axios instance — token is injected by the interceptor
+// Client-side axios instance — unauthenticated, used for public endpoints
 export const api = axios.create({
   baseURL: API_URL,
   timeout: 30000,
   headers: { "Content-Type": "application/json" },
 });
-
-// Attach Clerk token before every request
-api.interceptors.request.use(async (config) => {
-  try {
-    // Dynamic import to avoid SSR issues
-    const { useAuth } = await import("@clerk/nextjs");
-    // Can't call hooks outside React — token is injected via setAuthToken helper
-  } catch {
-    // Silently ignore
-  }
-  return config;
-});
-
-// Global response error handling
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      // Let Clerk handle redirect
-      window.location.href = "/login";
-    }
-    return Promise.reject(error);
-  }
-);
 
 // Helper: create an api instance with a pre-attached Bearer token
 export function createAuthedApi(token: string) {
@@ -49,11 +25,9 @@ export function createAuthedApi(token: string) {
   authed.interceptors.response.use(
     (response) => response,
     (error) => {
-      if (error.response?.status === 401) {
-        if (typeof window !== "undefined") {
-          window.location.href = "/login";
-        }
-      }
+      // On 401, throw the error so the caller can handle it gracefully.
+      // Do NOT force a redirect here — that causes infinite reload loops
+      // when the auth service is temporarily unavailable.
       return Promise.reject(error);
     }
   );
