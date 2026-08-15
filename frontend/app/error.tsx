@@ -1,8 +1,10 @@
 "use client";
 
+import { useEffect } from "react";
 import { AlertTriangle, RefreshCcw, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { logger } from "@/lib/logger";
 
 export default function Error({
   error,
@@ -11,6 +13,11 @@ export default function Error({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  useEffect(() => {
+    // Log the error to our custom logger
+    logger.error(error, { digest: error.digest, source: 'error.tsx boundary' });
+  }, [error]);
+
   return (
     <div className="flex flex-col items-center justify-center min-h-64 py-20 text-center">
       <div className="h-16 w-16 rounded-2xl bg-red-500/10 flex items-center justify-center mb-6">

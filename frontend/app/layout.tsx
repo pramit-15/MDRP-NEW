@@ -4,6 +4,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { ThemeProvider } from "@/providers/theme-provider";
 import { QueryProvider } from "@/providers/query-provider";
 import { Toaster } from "sonner";
+import { GlobalLogger } from "@/components/shared/GlobalLogger";
 import "./globals.css";
 
 const inter = Inter({
@@ -53,6 +54,7 @@ export default function RootLayout({
         <body className="min-h-screen bg-background font-sans antialiased">
           <ThemeProvider>
             <QueryProvider>
+              <GlobalLogger />
               {children}
               <Toaster
                 position="top-right"

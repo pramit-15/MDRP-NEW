@@ -90,9 +90,11 @@ def create_app(config_class=Config):
         logger.error(f"Failed to load models during startup: {e}")
         app_state["models_loaded"] = False
 
-    # Request ID injection
+    # Request ID injection and Logging
     @app.before_request
     def before_request():
+        g.start_time = time.time()
+        
         # Use existing X-Request-ID if provided by proxy/gateway, else generate one
         request_id = request.headers.get("X-Request-ID", uuid.uuid4().hex)
         g.request_id = request_id
@@ -105,6 +107,44 @@ def create_app(config_class=Config):
     def after_request(response):
         if hasattr(g, "request_id"):
             response.headers["X-Request-ID"] = g.request_id
+            
+        if hasattr(g, "start_time"):
+            duration_ms = (time.time() - g.start_time) * 1000
+            
+            # Safely capture request input
+            req_body = ""
+            if request.content_length and request.content_length < 50000: # Don't log massive files
+                try:
+                    req_body = request.get_data(as_text=True)
+                    if len(req_body) > 1000:
+                        req_body = req_body[:1000] + "... [truncated]"
+                except Exception:
+                    req_body = "[Unparseable request body]"
+
+            # Safely capture response output
+            res_body = ""
+            if response.content_type and "application/json" in response.content_type:
+                try:
+                    res_body = response.get_data(as_text=True)
+                    if len(res_body) > 1000:
+                        res_body = res_body[:1000] + "... [truncated]"
+                except Exception:
+                    res_body = "[Unparseable response body]"
+
+            # Log the request details
+            logger.info(
+                f"{request.method} {request.path} - {response.status_code} - {duration_ms:.2f}ms",
+                extra={
+                    "http_method": request.method,
+                    "http_path": request.path,
+                    "http_status": response.status_code,
+                    "duration_ms": duration_ms,
+                    "client_ip": request.remote_addr,
+                    "request_body": req_body,
+                    "response_body": res_body
+                }
+            )
+            
         return response
 
     @app.teardown_appcontext

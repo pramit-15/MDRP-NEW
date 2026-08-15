@@ -238,7 +238,7 @@ export default function UploadPage() {
                 <CheckCircle2 className="h-5 w-5 text-emerald-500" />
                 Extraction Complete
               </CardTitle>
-              <CardDescription>
+              <div className="text-sm text-muted-foreground">
                 {extractedFields.length} fields extracted via{" "}
                 <Badge variant="outline" className="text-[10px]">
                   {result.method === "gemini_ai" ? (
@@ -247,7 +247,7 @@ export default function UploadPage() {
                     "Pattern Matching"
                   )}
                 </Badge>
-              </CardDescription>
+              </div>
             </CardHeader>
             <CardContent>
               {extractedFields.length === 0 ? (

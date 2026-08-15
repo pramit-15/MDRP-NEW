@@ -210,6 +210,42 @@ def delete_history_v1(prediction_id):
             
     return jsonify({"success": True}), 200
 
+
+@api_bp.route("/logs", methods=["POST"])
+def receive_frontend_logs():
+    """
+    Ingest logs from the frontend
+    """
+    try:
+        data = request.get_json(force=True, silent=True)
+        if not data:
+            return jsonify({"success": False, "error": "No JSON payload"}), 400
+
+        level = data.get("level", "info").lower()
+        message = data.get("message", "")
+        context = data.get("context", {})
+
+        log_message = f"[FRONTEND] {message}"
+        
+        # Add a flag to context so we know it's from frontend
+        context["source"] = "frontend"
+        context["client_ip"] = request.remote_addr
+
+        if level == "error":
+            logger.error(log_message, extra=context)
+        elif level == "warn" or level == "warning":
+            logger.warning(log_message, extra=context)
+        elif level == "debug":
+            logger.debug(log_message, extra=context)
+        else:
+            logger.info(log_message, extra=context)
+
+        return jsonify({"success": True}), 200
+    except Exception as e:
+        logger.exception("Failed to ingest frontend logs")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Implementation Logic
 # ─────────────────────────────────────────────────────────────────────────────

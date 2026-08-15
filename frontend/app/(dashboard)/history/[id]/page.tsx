@@ -1,5 +1,6 @@
 "use client";
 
+import { use } from "react";
 import { useHistoryDetail } from "@/hooks/use-predictions";
 import { PredictionResultView } from "@/features/prediction/prediction-result";
 import { SkeletonCard } from "@/components/ui/skeleton";
@@ -10,9 +11,10 @@ import Link from "next/link";
 export default function HistoryDetailPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
-  const { data, isLoading, isError } = useHistoryDetail(params.id);
+  const { id } = use(params);
+  const { data, isLoading, isError } = useHistoryDetail(id);
 
   if (isLoading) {
     return (
