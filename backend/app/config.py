@@ -55,7 +55,7 @@ class BaseConfig:
 
 class DevelopmentConfig(BaseConfig):
     MDRP_DEBUG = True
-    DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql+psycopg://user:pass@localhost:5432/mdrp_dev")
+    DATABASE_URL = os.environ.get("DATABASE_URL", "your database URL")
     
     @classmethod
     def validate(cls):
