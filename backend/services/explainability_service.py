@@ -117,12 +117,53 @@ class ExplainabilityService:
             
             start_time = time.time()
 
-            # Try shap first for tree models, fall back to permutation for ensembles
             model_class = type(model).__name__
-            use_shap = model_class in ['RandomForestClassifier', 'GradientBoostingClassifier',
-                                        'ExtraTreesClassifier', 'DecisionTreeClassifier']
-            
-            if use_shap:
+            computed = False
+            values = None
+            base_val = 0.0
+
+            # 1. Direct TreeExplainer for StackingClassifier ensembles
+            if model_class == 'StackingClassifier' and hasattr(model, 'named_estimators_'):
+                try:
+                    import shap
+                    named = model.named_estimators_
+                    xgb_est = named.get("xgb")
+                    rf_est = named.get("rf")
+                    
+                    if xgb_est is not None and rf_est is not None:
+                        # Extract tree explainers
+                        exp_xgb = shap.TreeExplainer(xgb_est, data=bg)
+                        exp_rf = shap.TreeExplainer(rf_est, data=bg)
+                        
+                        shap_xgb_obj = exp_xgb(X_df)
+                        shap_rf_obj = exp_rf(X_df)
+                        
+                        xgb_vals = shap_xgb_obj.values[0, :, 1] if shap_xgb_obj.values.ndim == 3 else shap_xgb_obj.values[0]
+                        rf_vals = shap_rf_obj.values[0, :, 1] if shap_rf_obj.values.ndim == 3 else shap_rf_obj.values[0]
+                        
+                        xgb_base = float(shap_xgb_obj.base_values[0, 1]) if shap_xgb_obj.base_values.ndim == 2 else float(np.ravel(shap_xgb_obj.base_values)[0])
+                        rf_base = float(shap_rf_obj.base_values[0, 1]) if shap_rf_obj.base_values.ndim == 2 else float(np.ravel(shap_rf_obj.base_values)[0])
+                        
+                        # Weight using final meta-estimator coefficients if available
+                        w_xgb, w_rf = 0.5, 0.5
+                        if hasattr(model, 'final_estimator_') and hasattr(model.final_estimator_, 'coef_'):
+                            coefs = model.final_estimator_.coef_[0]
+                            if len(coefs) >= 2:
+                                tot = abs(coefs[0]) + abs(coefs[1]) + 1e-8
+                                w_xgb = abs(coefs[0]) / tot
+                                w_rf = abs(coefs[1]) / tot
+                                
+                        values = w_xgb * xgb_vals + w_rf * rf_vals
+                        base_val = w_xgb * xgb_base + w_rf * rf_base
+                        computed = True
+                        self.logger.info(f"Stacking Ensemble TreeExplainer SHAP for {model_name} in {(time.time()-start_time)*1000:.0f}ms")
+                except Exception as e:
+                    self.logger.warning(f"Stacking TreeExplainer failed, falling back to permutation: {e}")
+                    computed = False
+
+            # 2. Direct TreeExplainer for standalone tree models
+            if not computed and model_class in ['RandomForestClassifier', 'GradientBoostingClassifier',
+                                                'ExtraTreesClassifier', 'DecisionTreeClassifier', 'XGBClassifier']:
                 try:
                     import shap
                     exp = shap.TreeExplainer(model, data=bg)
@@ -133,20 +174,21 @@ class ExplainabilityService:
                     else:
                         values = shap_obj.values[0]
                         base_val = float(np.ravel(shap_obj.base_values)[0])
+                    computed = True
                     self.logger.info(f"TreeExplainer SHAP for {model_name} in {(time.time()-start_time)*1000:.0f}ms")
                 except Exception as e:
                     self.logger.warning(f"TreeExplainer failed, using permutation: {e}")
-                    use_shap = False
+                    computed = False
 
-            if not use_shap:
-                # Scale background the same way as prediction
+            # 3. Permutation Importance Fallback
+            if not computed:
                 def scaled_predict(df: pd.DataFrame):
                     arr = df.values
                     if scaler is not None:
                         arr = scaler.transform(arr)
                     return model.predict_proba(arr)
 
-                X_scaled_df = X_df.copy()  # we pass unscaled, scaling happens in predict fn
+                X_scaled_df = X_df.copy()
                 values, base_val = self._compute_permutation_importance(scaled_predict, X_scaled_df, bg)
                 self.logger.info(
                     f"Permutation SHAP for {model_name} in {(time.time()-start_time)*1000:.0f}ms"

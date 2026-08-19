@@ -92,6 +92,30 @@ export interface ExplainabilityResult {
   base_value?: Record<string, number>;
 }
 
+// ─── AI Health Suggestions Types ──────────────────────────────────────────
+
+export interface LifestyleSuggestion {
+  category: string;
+  icon?: string;
+  priority: "High" | "Medium" | "Low";
+  title: string;
+  advice: string;
+  action_items: string[];
+}
+
+export interface AISuggestionsResult {
+  summary: string;
+  risk_breakdown: {
+    heart: string;
+    diabetes: string;
+    kidney: string;
+  };
+  lifestyle_suggestions: LifestyleSuggestion[];
+  top_priority: string;
+  disclaimer: string;
+  generated_by?: "gemini_ai" | "clinical_rules";
+}
+
 export interface PredictionResponse {
   success: boolean;
   heart: number;
@@ -107,6 +131,7 @@ export interface PredictionResponse {
   used_defaults: string[];
   prediction_id?: string;
   explainability?: ExplainabilityResult;
+  ai_suggestions?: AISuggestionsResult;
 }
 
 // ─── History Types ────────────────────────────────────────────────────────────
@@ -133,6 +158,7 @@ export interface HistoryDetail extends HistoryItem {
   };
   inputs_used: PredictionInput;
   used_defaults: string[];
+  ai_suggestions?: AISuggestionsResult;
 }
 
 export interface HistoryResponse {
@@ -175,6 +201,39 @@ export interface PdfParseResponse {
   count: number;
   all_fields: string[];
   method: "gemini_ai" | "regex";
+  report_id?: string | null;
+}
+
+// ─── Simulation Types ─────────────────────────────────────────────────────────
+
+export interface SimulationScoreGroup {
+  heart: number;
+  diabetes: number;
+  kidney: number;
+  composite: number;
+  level?: string;
+  scores_detail?: Record<string, ScoreDetail>;
+  bmi_used?: number;
+}
+
+export interface SimulationResponse {
+  success: boolean;
+  baseline: SimulationScoreGroup;
+  simulated: SimulationScoreGroup;
+  deltas: {
+    heart: number;
+    diabetes: number;
+    kidney: number;
+    composite: number;
+  };
+  percentage_reductions: {
+    heart: number;
+    diabetes: number;
+    kidney: number;
+    composite: number;
+  };
+  milestones: string[];
+  modifications_applied: Record<string, any>;
 }
 
 // ─── Health Check ─────────────────────────────────────────────────────────────

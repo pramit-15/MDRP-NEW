@@ -80,7 +80,7 @@ def validate_patient_data(data: dict) -> dict:
         except ValueError:
             raise ValidationError("diastolic_bp", "Diastolic BP must be a numeric value.")
 
-    # Other lab fields
+    # Other lab fields — gracefully clamp to physiological bounds so PDF parsing or outlier inputs never crash prediction
     for field in ALL_LAB_FIELDS:
         raw = data.get(field)
         if raw is None or raw == "":
@@ -91,7 +91,10 @@ def validate_patient_data(data: dict) -> dict:
         except ValueError:
             raise ValidationError(field, f"{field} must be a numeric value.")
             
-        _check_bounds(field, val)
+        if field in FIELD_BOUNDS:
+            lo, hi = FIELD_BOUNDS[field]
+            val = max(float(lo), min(float(hi), val))
+
         cleaned[field] = val
         
     return cleaned

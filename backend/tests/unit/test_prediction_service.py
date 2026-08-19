@@ -8,14 +8,14 @@ from backend.app.constants import RISK_THRESHOLD
 def prediction_service():
     return PredictionService()
 
-@patch('app.services.prediction_service.model_loader')
+@patch('backend.services.prediction_service.model_loader')
 def test_predict_ml_model_not_found(mock_loader, prediction_service):
     mock_loader.get_model.return_value = None
     # Should return fallback RISK_THRESHOLD
     result = prediction_service._predict_ml("heart", {})
     assert result == RISK_THRESHOLD
 
-@patch('app.services.prediction_service.model_loader')
+@patch('backend.services.prediction_service.model_loader')
 def test_predict_ml_success(mock_loader, prediction_service):
     mock_model = MagicMock()
     mock_model.predict_proba.return_value = [[0.2, 0.8]]
@@ -29,7 +29,7 @@ def test_predict_ml_success(mock_loader, prediction_service):
     assert result == 0.8
     mock_model.predict_proba.assert_called_once()
 
-@patch('app.services.prediction_service.model_loader')
+@patch('backend.services.prediction_service.model_loader')
 def test_predict_ml_exception(mock_loader, prediction_service):
     mock_model = MagicMock()
     mock_model.predict_proba.side_effect = Exception("Incompatible shape")
@@ -39,7 +39,7 @@ def test_predict_ml_exception(mock_loader, prediction_service):
     with pytest.raises(PredictionError):
         prediction_service._predict_ml("heart", {"age": 45})
 
-@patch('app.services.prediction_service.model_loader')
+@patch('backend.services.prediction_service.model_loader')
 def test_classify_health_condition(mock_loader, prediction_service):
     mock_model = MagicMock()
     mock_model.predict_proba.return_value = [[0.1, 0.9]]

@@ -92,6 +92,9 @@ export default function UploadPage() {
   const handleUsePdfData = () => {
     if (result?.extracted) {
       sessionStorage.setItem("pdf_prefill", JSON.stringify(result.extracted));
+      if (result.report_id) {
+        sessionStorage.setItem("uploaded_report_id", result.report_id);
+      }
       router.push("/predictions/new?source=pdf");
     }
   };

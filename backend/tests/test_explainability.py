@@ -26,7 +26,10 @@ def test_numpy_serialization():
 
 def test_create_summary():
     shap_results = {
-        "feature_importance": [{"feature": "glucose", "contribution": 0.5}],
+        "feature_importance": [
+            {"feature": "glucose", "value": 150.0, "contribution": 0.5},
+            {"feature": "hdl", "value": 60.0, "contribution": -0.1}
+        ],
         "positive_contributors": [
             {"feature": "glucose", "value": 150.0, "contribution": 0.5},
             {"feature": "bmi", "value": 30.0, "contribution": 0.2}
@@ -38,5 +41,5 @@ def test_create_summary():
     
     summary = explainability_service.create_summary("diabetes", shap_results)
     assert "Your diabetes risk is influenced by several factors" in summary
-    assert "glucose (150.0)" in summary
+    assert "Glucose (150.0)" in summary
     assert "hdl (60.0)" in summary

@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MedRisk — Disease Risk Prediction</title>
+  <title>MDRP — Multi-Disease Risk Prediction Platform</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
   <style>
@@ -16,22 +16,33 @@
       --mono:'JetBrains Mono',monospace;--sans:'Sora',sans-serif;
       --r:10px;--r-lg:18px;
     }
+    [data-theme="light"] {
+      --bg:#f8fafc;--bg-card:#ffffff;--bg-field:#f1f5f9;--bg-elevated:#ffffff;
+      --border:#e2e8f0;--border-hi:#cbd5e1;--text:#0f172a;--text-dim:#334155;
+      --text-muted:#64748b;--blue:#2563eb;--blue-glow:rgba(37,99,235,.2);
+      --cyan:#0891b2;--cyan-glow:rgba(8,145,178,.15);--green:#059669;
+      --amber:#d97706;--red:#dc2626;--violet:#7c3aed;
+    }
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
     html{scroll-behavior:smooth}
-    body{background:var(--bg);color:var(--text);font-family:var(--sans);font-weight:400;min-height:100vh;line-height:1.6}
+    body{background:var(--bg);color:var(--text);font-family:var(--sans);font-weight:400;min-height:100vh;line-height:1.6;transition:background .25s,color .25s}
     body::before{content:'';position:fixed;inset:0;pointer-events:none;
       background-image:linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px),
       linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px);
       background-size:52px 52px}
-    .page{position:relative;z-index:1;max-width:860px;margin:0 auto;padding:0 20px 80px}
-    header{padding:48px 0 32px;border-bottom:1px solid var(--border);margin-bottom:36px}
+    .page{position:relative;z-index:1;max-width:880px;margin:0 auto;padding:0 20px 80px}
+    header{padding:40px 0 28px;border-bottom:1px solid var(--border);margin-bottom:32px;display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px}
+    .header-left{flex:1;min-width:280px}
     .brand{display:flex;align-items:center;gap:12px;margin-bottom:8px}
-    .brand-dot{width:36px;height:36px;border-radius:9px;background:linear-gradient(135deg,#fb7185 0%,#3b82f6 100%);display:flex;align-items:center;justify-content:center;font-size:18px}
+    .brand-dot{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#3b82f6 0%,#10b981 100%);display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 4px 12px rgba(59,130,246,.3)}
     .brand-name{font-size:24px;font-weight:700;letter-spacing:-.3px}
     .brand-sub{font-size:12px;font-family:var(--mono);color:var(--text-dim);letter-spacing:.05em;text-transform:uppercase;font-weight:600}
-    .notice{margin-top:10px;font-size:13px;color:var(--text);font-weight:500;background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);border-radius:6px;padding:10px 14px}
-    .card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r-lg);padding:28px;margin-bottom:20px;box-shadow:0 4px 6px -1px rgba(0,0,0,.2)}
-    .card-title{display:flex;align-items:center;gap:10px;font-size:14px;font-weight:600;font-family:var(--mono);text-transform:uppercase;letter-spacing:.05em;color:var(--text);margin-bottom:22px}
+    .header-right{display:flex;gap:10px;align-items:center}
+    .btn-theme{background:var(--bg-field);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:12px;padding:8px 14px;border-radius:var(--r);cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .2s}
+    .btn-theme:hover{border-color:var(--blue);color:var(--blue)}
+    .notice{margin-top:14px;font-size:13px;color:var(--text);font-weight:500;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:var(--r);padding:10px 14px}
+    .card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r-lg);padding:26px;margin-bottom:20px;box-shadow:0 4px 12px rgba(0,0,0,.08)}
+    .card-title{display:flex;align-items:center;gap:10px;font-size:14px;font-weight:600;font-family:var(--mono);text-transform:uppercase;letter-spacing:.05em;color:var(--text);margin-bottom:20px}
     .card-title span{font-size:18px}
     .section-label{font-size:10px;font-family:var(--mono);font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);margin:20px 0 10px;display:flex;align-items:center;gap:10px}
     .section-label::after{content:'';flex:1;height:1px;background:var(--border)}
@@ -39,27 +50,26 @@
     .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
     .grid.g3{grid-template-columns:1fr 1fr 1fr}
     .grid.g4{grid-template-columns:1fr 1fr 1fr 1fr}
-    @media(max-width:640px){.grid,.grid.g3,.grid.g4{grid-template-columns:1fr 1fr}}
-    @media(max-width:400px){.grid,.grid.g3,.grid.g4{grid-template-columns:1fr}}
+    @media(max-width:640px){.grid,.grid.g3,.grid.g4{grid-template-columns:1fr}}
     .field{display:flex;flex-direction:column;gap:6px}
-    label{font-size:12px;font-family:var(--mono);font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em}
-    input[type=number],input[type=text],select{background:var(--bg-field);border:1px solid var(--border-hi);color:var(--text);font-family:var(--sans);font-size:15px;font-weight:500;border-radius:var(--r);padding:12px 14px;width:100%;outline:none;transition:all .2s;-webkit-appearance:none;-moz-appearance:none;appearance:none}
+    label{font-size:11px;font-family:var(--mono);font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em}
+    input[type=number],input[type=text],select{background:var(--bg-field);border:1px solid var(--border-hi);color:var(--text);font-family:var(--sans);font-size:15px;font-weight:500;border-radius:var(--r);padding:11px 13px;width:100%;outline:none;transition:all .2s;-webkit-appearance:none;-moz-appearance:none;appearance:none}
     input:focus,select:focus{border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-glow)}
     input.from-pdf{border-color:var(--cyan)!important;background:rgba(34,211,238,.1)!important;box-shadow:0 0 0 2px var(--cyan-glow)!important;color:var(--cyan)}
-    select option{background:var(--bg-card);color:white}
+    select option{background:var(--bg-card);color:var(--text)}
     .hint{font-size:11px;color:var(--text-muted);font-family:var(--mono);font-weight:500}
-    .bmi-pill{display:inline-flex;align-items:center;gap:7px;background:rgba(34,211,238,.15);border:1px solid var(--cyan);border-radius:20px;padding:6px 14px;font-size:13px;font-family:var(--mono);color:var(--cyan);margin-top:8px;font-weight:600;transition:opacity .2s}
-    .bmi-pill.hidden{opacity:0;pointer-events:none}
+    .bmi-pill{display:inline-flex;align-items:center;gap:7px;background:rgba(34,211,238,.15);border:1px solid var(--cyan);border-radius:20px;padding:6px 14px;font-size:13px;font-family:var(--mono);color:var(--cyan);margin-top:8px;font-weight:600}
+    .bmi-pill.hidden{display:none}
     #preg-field{display:none}
-    .pdf-zone{border:2px dashed var(--border-hi);border-radius:var(--r-lg);padding:40px 28px;text-align:center;cursor:pointer;position:relative;transition:all .2s;background:rgba(255,255,255,.01)}
+    .pdf-zone{border:2px dashed var(--border-hi);border-radius:var(--r-lg);padding:36px 24px;text-align:center;cursor:pointer;position:relative;transition:all .2s;background:rgba(255,255,255,.01)}
     .pdf-zone:hover,.pdf-zone.over{border-color:var(--cyan);background:rgba(34,211,238,.05)}
     .pdf-zone input[type=file]{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}
-    .pdf-icon{font-size:36px;margin-bottom:12px}
-    .pdf-zone h3{font-size:16px;font-weight:600;margin-bottom:8px}
+    .pdf-icon{font-size:36px;margin-bottom:10px}
+    .pdf-zone h3{font-size:16px;font-weight:600;margin-bottom:6px}
     .pdf-zone p{font-size:13px;color:var(--text-dim);line-height:1.6}
-    .pdf-tag{display:inline-block;margin-top:14px;font-size:11px;font-family:var(--mono);font-weight:600;background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.4);color:#93c5fd;border-radius:20px;padding:5px 14px;letter-spacing:.03em}
-    #extracted-panel{display:none;margin-top:24px}
-    .ext-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+    .pdf-tag{display:inline-block;margin-top:12px;font-size:11px;font-family:var(--mono);font-weight:600;background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.4);color:#93c5fd;border-radius:20px;padding:4px 12px}
+    #extracted-panel{display:none;margin-top:20px}
+    .ext-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
     .ext-header-left{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
     .ext-title{font-size:13px;font-weight:600;font-family:var(--mono)}
     .ext-count{font-size:12px;font-family:var(--mono);color:var(--text-muted);background:var(--bg-field);border:1px solid var(--border);border-radius:20px;padding:2px 10px}
@@ -67,7 +77,7 @@
     .method-badge.hidden{display:none}
     .method-badge.claude{background:rgba(167,139,250,.2);border:1px solid var(--violet);color:var(--violet)}
     .method-badge.regex{background:rgba(245,158,11,.15);border:1px solid var(--amber);color:var(--amber)}
-    .ext-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:8px}
+    .ext-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
     .ext-group-label{grid-column:1/-1;font-size:10px;font-family:var(--mono);font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);padding:6px 0 2px;border-bottom:1px solid var(--border);margin-top:6px}
     .ext-item{background:var(--bg-field);border:1px solid var(--border);border-radius:var(--r);padding:8px 10px;display:flex;flex-direction:column;gap:2px}
     .ext-item.found{border-color:rgba(34,211,238,.5)}
@@ -75,18 +85,22 @@
     .ev{font-size:14px;font-weight:600;color:var(--cyan)}
     .ev.missing{color:var(--border-hi)}
     .eu{font-size:10px;font-family:var(--mono);color:var(--text-muted)}
-    .btn-predict{width:100%;padding:18px;font-size:16px;font-weight:700;font-family:var(--sans);letter-spacing:.02em;background:linear-gradient(135deg,#1d4ed8,#7c3aed);color:white;border:none;border-radius:var(--r-lg);cursor:pointer;transition:all .25s;margin-bottom:28px;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 14px rgba(99,102,241,.3)}
+    .btn-predict{width:100%;padding:16px;font-size:16px;font-weight:700;font-family:var(--sans);letter-spacing:.02em;background:linear-gradient(135deg,#1d4ed8,#7c3aed);color:white;border:none;border-radius:var(--r-lg);cursor:pointer;transition:all .25s;margin-bottom:28px;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 4px 14px rgba(99,102,241,.3)}
     .btn-predict:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 8px 20px rgba(99,102,241,.45)}
     .btn-predict:disabled{opacity:.5;cursor:not-allowed;transform:none}
     .spinner{width:18px;height:18px;border:2px solid rgba(255,255,255,.3);border-top-color:white;border-radius:50%;animation:spin .7s linear infinite;display:none}
     @keyframes spin{to{transform:rotate(360deg)}}
     #results{display:none}
-    .results-title{font-size:13px;font-family:var(--mono);font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted);margin-bottom:16px}
+    .results-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px}
+    .results-title{font-size:13px;font-family:var(--mono);font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--text-muted)}
+    .results-actions{display:flex;gap:8px}
+    .btn-action{background:var(--bg-field);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:12px;padding:6px 12px;border-radius:var(--r);cursor:pointer;display:flex;align-items:center;gap:6px}
+    .btn-action:hover{border-color:var(--blue);color:var(--blue)}
     .risk-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
     @media(max-width:600px){.risk-row{grid-template-columns:1fr}}
     .risk-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--r-lg);padding:22px}
     .risk-disease{font-size:13px;font-weight:600;font-family:var(--mono);text-transform:uppercase;letter-spacing:.04em;color:var(--text-dim);margin-bottom:14px}
-    .risk-num{font-size:42px;font-weight:700;font-family:var(--mono);letter-spacing:-.03em;line-height:1;margin-bottom:14px}
+    .risk-num{font-size:40px;font-weight:700;font-family:var(--mono);letter-spacing:-.03em;line-height:1;margin-bottom:14px}
     .risk-pct{font-size:20px;font-weight:400}
     .c-low{color:var(--green)}.c-mid{color:var(--amber)}.c-high{color:var(--red)}
     .risk-bar{height:6px;background:var(--bg-field);border-radius:3px;overflow:hidden;margin-bottom:10px}
@@ -101,13 +115,30 @@
     .heart-card{border-top:3px solid #fb7185}
     .diab-card{border-top:3px solid #fbbf24}
     .kidney-card{border-top:3px solid #34d399}
-    .hm-card{border-top:3px solid var(--violet);margin-top:16px}
-    .hm-row{display:flex;flex-direction:column;gap:8px;margin-top:10px}
-    .hm-item{display:flex;align-items:center;gap:10px}
-    .hm-label{font-size:11px;font-family:var(--mono);color:var(--text-dim);width:120px;flex-shrink:0}
-    .hm-bar-wrap{flex:1;background:var(--bg-field);border-radius:3px;height:5px;overflow:hidden}
-    .hm-bar-fill{height:100%;border-radius:3px;background:var(--violet);transition:width 1s cubic-bezier(.4,0,.2,1)}
-    .hm-pct{font-size:11px;font-family:var(--mono);color:var(--text-muted);width:36px;text-align:right}
+    
+    /* SHAP & AI Suggestion cards */
+    .shap-card{border-top:3px solid var(--blue);margin-top:16px}
+    .shap-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+    @media(max-width:600px){.shap-grid{grid-template-columns:1fr}}
+    .shap-box{background:var(--bg-field);border:1px solid var(--border);border-radius:var(--r);padding:12px}
+    .shap-title{font-size:11px;font-family:var(--mono);font-weight:600;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+    .shap-row{display:flex;justify-content:space-between;align-items:center;font-size:12px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+    .shap-val-pos{color:var(--red);font-weight:600;font-family:var(--mono)}
+    .shap-val-neg{color:var(--green);font-weight:600;font-family:var(--mono)}
+    
+    .ai-card{border-top:3px solid #06b6d4;margin-top:16px;background:linear-gradient(180deg,rgba(6,182,212,.06),var(--bg-card))}
+    .ai-summary{font-size:13px;color:var(--text);line-height:1.6;margin-bottom:14px;padding:12px;border-radius:var(--r);background:var(--bg-field);border:1px solid var(--border)}
+    .ai-priority{background:rgba(245,158,11,.15);border:1px solid var(--amber);border-radius:var(--r);padding:12px;margin-bottom:14px;color:var(--amber);font-size:13px;font-weight:600}
+    .ai-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    @media(max-width:600px){.ai-grid{grid-template-columns:1fr}}
+    .ai-item{background:var(--bg-field);border:1px solid var(--border);border-radius:var(--r);padding:14px}
+    .ai-item-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+    .ai-item-title{font-size:13px;font-weight:700;color:var(--text)}
+    .ai-item-badge{font-size:10px;font-family:var(--mono);padding:2px 8px;border-radius:10px;background:rgba(59,130,246,.2);color:var(--blue);border:1px solid var(--blue)}
+    .ai-item-desc{font-size:12px;color:var(--text-muted);line-height:1.5;margin-bottom:8px}
+    .ai-checklist{list-style:none;font-size:11px;color:var(--text-dim);display:flex;flex-direction:column;gap:4px}
+    .ai-checklist li::before{content:"✓ ";color:var(--green);font-weight:700}
+
     .toast{position:fixed;bottom:24px;right:24px;background:var(--bg-elevated);border:2px solid var(--border-hi);border-radius:var(--r);padding:14px 20px;font-weight:600;font-size:13px;font-family:var(--mono);z-index:9999;transform:translateY(60px);opacity:0;transition:all .3s cubic-bezier(.16,1,.3,1);max-width:320px}
     .toast.show{transform:translateY(0);opacity:1}
     .toast.ok{border-color:var(--green);color:var(--green)}
@@ -120,19 +151,24 @@
 <body>
 <div class="page">
   <header>
-    <div class="brand">
-      <div class="brand-dot">🩺</div>
-      <span class="brand-name">MedRisk</span>
+    <div class="header-left">
+      <div class="brand">
+        <div class="brand-dot">🩺</div>
+        <span class="brand-name">MDRP Clinical Platform</span>
+      </div>
+      <div class="brand-sub">Multi-Disease Risk Prediction · Ensemble ML + Unified Clinical Scoring</div>
     </div>
-    <div class="brand-sub">Multi-Disease Risk Prediction · Ensemble ML + Unified Weighted Clinical Scoring</div>
-    <div class="notice">
-      ⚠ Results are <strong>risk estimates</strong>, not diagnoses. Always consult a qualified doctor.<br>
-      Upload a PDF <em>or</em> enter lab values manually — both routes work fully.
+    <div class="header-right">
+      <button class="btn-theme" id="themeBtn" onclick="toggleTheme()">🌓 Theme</button>
+    </div>
+    <div class="notice" style="width:100%">
+      ⚠ Results are <strong>risk estimates</strong>, not formal diagnoses. Always consult a qualified physician.<br>
+      Upload a PDF <em>or</em> enter lab values manually — both pathways work fully.
     </div>
   </header>
 
   <div class="card">
-    <div class="card-title"><span>🧍</span> Basic Information</div>
+    <div class="card-title"><span>🧍</span> Patient Basic Information</div>
     <div class="grid g3">
       <div class="field">
         <label>Age (years)</label>
@@ -157,7 +193,10 @@
         <input type="text" id="bp_text" placeholder="e.g. 120/80" />
         <span class="hint">Format: Systolic / Diastolic</span>
       </div>
-      <div class="field"></div>
+      <div class="field">
+        <label>Resting Heart Rate (bpm)</label>
+        <input type="number" id="thalach" min="40" max="220" placeholder="e.g. 75" />
+      </div>
     </div>
     <div class="grid" style="margin-top:16px">
       <div class="field">
@@ -174,177 +213,181 @@
 
   <div class="card">
     <div class="card-title">
-      <span>📄</span> Blood Report PDF
-      <span style="font-size:12px;font-weight:400;color:var(--text-muted);text-transform:none;letter-spacing:0">(optional — values auto-fill the form below)</span>
+      <span>📄</span> Blood Report PDF (Optional)
     </div>
     <div class="pdf-zone" id="pdfZone">
       <input type="file" id="pdfInput" accept=".pdf" />
       <div class="pdf-icon">🔬</div>
       <h3 id="pdfZoneText">Upload your lab report</h3>
-      <p>Drag &amp; drop or click to browse.<br/>Supports Indian &amp; international pathology report formats.<br/><strong>AI-powered extraction</strong> reads test names, tables, and abbreviations.</p>
-      <div class="pdf-tag">✦ Glucose · HbA1c · Lipid Panel · Kidney Function · Clinical History</div>
+      <p>Drag &amp; drop or click to browse PDF.<br/><strong>AI-powered extraction</strong> automatically parses test names, tables, and biomarkers.</p>
+      <div class="pdf-tag">✦ Glucose · HbA1c · Lipid Panel · Kidney Profile · Electrolytes</div>
     </div>
     <div id="extracted-panel">
       <div class="ext-header">
         <div class="ext-header-left">
-          <span class="ext-title">Extracted from report</span>
+          <span class="ext-title">Extracted Biomarkers</span>
           <span class="ext-count" id="ext-count">0 values found</span>
           <span class="method-badge hidden" id="method-badge"></span>
         </div>
       </div>
       <div class="ext-grid" id="ext-grid"></div>
-      <p style="font-size:12px;color:var(--text-dim);font-family:var(--mono);margin-top:14px;line-height:1.7;">
-        ✓ Found values are filled into the lab form below with cyan highlight.<br>
-        Missing values receive medically-normal defaults derived from published clinical guidelines.
-      </p>
     </div>
   </div>
 
   <div class="card">
-    <div class="card-title">
-      <span>🧪</span> Lab Values
-      <span style="font-size:12px;font-weight:400;color:var(--text-muted);text-transform:none;letter-spacing:0">(optional — fill manually or upload PDF)</span>
-    </div>
-    <div class="section-label">Glucose &amp; Metabolic</div>
+    <div class="card-title"><span>🧪</span> Physiological &amp; Laboratory Biomarkers</div>
+    <div class="section-label">Glycemic &amp; Metabolic</div>
     <div class="grid g4">
-      <div class="field"><label>Fasting Glucose</label><input type="number" id="glucose" min="40" max="600" step="0.1" placeholder="mg/dL" /><span class="hint">FBS / FPG</span></div>
-      <div class="field"><label>Post-Prandial</label><input type="number" id="bgr" min="40" max="600" step="0.1" placeholder="mg/dL" /><span class="hint">PPBS / RBS</span></div>
-      <div class="field"><label>HbA1c</label><input type="number" id="hba1c" min="3" max="15" step="0.1" placeholder="%" /><span class="hint">Glycated Hb %</span></div>
-      <div class="field"><label>Insulin</label><input type="number" id="insulin" min="1" max="800" step="0.1" placeholder="µU/mL" /><span class="hint">Fasting insulin</span></div>
+      <div class="field"><label>Fasting Glucose (mg/dL)</label><input type="number" id="glucose" placeholder="e.g. 95" /></div>
+      <div class="field"><label>Random Glucose / BGR</label><input type="number" id="bgr" placeholder="e.g. 110" /></div>
+      <div class="field"><label>HbA1c (%)</label><input type="number" step="0.1" id="hba1c" placeholder="e.g. 5.6" /></div>
+      <div class="field"><label>Insulin (µU/mL)</label><input type="number" step="0.1" id="insulin" placeholder="e.g. 12" /></div>
     </div>
+
     <div class="section-label">Lipid Panel</div>
     <div class="grid g4">
-      <div class="field"><label>Total Cholesterol</label><input type="number" id="chol" min="80" max="500" step="0.1" placeholder="mg/dL" /></div>
-      <div class="field"><label>LDL</label><input type="number" id="ldl" min="20" max="400" step="0.1" placeholder="mg/dL" /><span class="hint">"Bad" cholesterol</span></div>
-      <div class="field"><label>HDL</label><input type="number" id="hdl" min="10" max="150" step="0.1" placeholder="mg/dL" /><span class="hint">"Good" cholesterol</span></div>
-      <div class="field"><label>Triglycerides</label><input type="number" id="triglycerides" min="20" max="1500" step="0.1" placeholder="mg/dL" /></div>
+      <div class="field"><label>Total Cholesterol</label><input type="number" id="chol" placeholder="e.g. 185" /></div>
+      <div class="field"><label>LDL Cholesterol</label><input type="number" id="ldl" placeholder="e.g. 100" /></div>
+      <div class="field"><label>HDL Cholesterol</label><input type="number" id="hdl" placeholder="e.g. 55" /></div>
+      <div class="field"><label>Triglycerides</label><input type="number" id="triglycerides" placeholder="e.g. 140" /></div>
     </div>
-    <div class="section-label">Kidney Function</div>
+
+    <div class="section-label">Renal &amp; Electrolytes</div>
     <div class="grid g4">
-      <div class="field"><label>Serum Creatinine</label><input type="number" id="sc" min="0.1" max="20" step="0.01" placeholder="mg/dL" /></div>
-      <div class="field"><label>Blood Urea</label><input type="number" id="bu" min="5" max="400" step="0.1" placeholder="mg/dL" /><span class="hint">Urea / BUN</span></div>
-      <div class="field"><label>eGFR</label><input type="number" id="egfr" min="0" max="200" step="0.1" placeholder="mL/min" /><span class="hint">If reported</span></div>
-      <div class="field"></div>
-    </div>
-    <div class="section-label">Electrolytes</div>
-    <div class="grid" style="max-width:420px">
-      <div class="field"><label>Sodium</label><input type="number" id="sod" min="100" max="175" step="0.1" placeholder="mEq/L" /></div>
-      <div class="field"><label>Potassium</label><input type="number" id="pot" min="1.5" max="9" step="0.1" placeholder="mEq/L" /></div>
+      <div class="field"><label>Serum Creatinine (mg/dL)</label><input type="number" step="0.01" id="sc" placeholder="e.g. 0.9" /></div>
+      <div class="field"><label>Blood Urea (mg/dL)</label><input type="number" id="bu" placeholder="e.g. 24" /></div>
+      <div class="field"><label>Sodium (mEq/L)</label><input type="number" id="sod" placeholder="e.g. 140" /></div>
+      <div class="field"><label>Potassium (mEq/L)</label><input type="number" step="0.1" id="pot" placeholder="e.g. 4.2" /></div>
     </div>
   </div>
 
   <button class="btn-predict" id="btnPredict" onclick="runPredict()">
-    <div class="spinner" id="spinner"></div>
-    <span id="btn-text">🔬 Analyse Risk</span>
+    <span class="spinner" id="spinner"></span>
+    <span id="btn-text">🔬 Run Risk Analysis</span>
   </button>
 
+  <!-- Prediction Results View -->
   <div id="results">
-    <div class="results-title">Risk Assessment — Based on your values</div>
+    <div class="results-header">
+      <div class="results-title">Assessment Results &amp; Risk Insights</div>
+      <div class="results-actions">
+        <button class="btn-action" onclick="window.print()">🖨 Print Report</button>
+      </div>
+    </div>
+
     <div class="risk-row">
       <div class="risk-card heart-card">
-        <div class="risk-disease">❤️ Heart Disease</div>
-        <div class="risk-num" id="h-num">—<span class="risk-pct"></span></div>
+        <div class="risk-disease">❤️ Cardiovascular</div>
+        <div class="risk-num" id="h-num">—</div>
         <div class="risk-bar"><div class="risk-fill" id="h-fill"></div></div>
-        <div class="risk-tag" id="h-tag"></div>
+        <span class="risk-tag" id="h-tag">—</span>
         <div class="risk-detail" id="h-detail"></div>
       </div>
       <div class="risk-card diab-card">
         <div class="risk-disease">🩸 Diabetes</div>
-        <div class="risk-num" id="d-num">—<span class="risk-pct"></span></div>
+        <div class="risk-num" id="d-num">—</div>
         <div class="risk-bar"><div class="risk-fill" id="d-fill"></div></div>
-        <div class="risk-tag" id="d-tag"></div>
+        <span class="risk-tag" id="d-tag">—</span>
         <div class="risk-detail" id="d-detail"></div>
       </div>
       <div class="risk-card kidney-card">
-        <div class="risk-disease">🫘 Kidney Disease</div>
-        <div class="risk-num" id="k-num">—<span class="risk-pct"></span></div>
+        <div class="risk-disease">🧪 Kidney Disease</div>
+        <div class="risk-num" id="k-num">—</div>
         <div class="risk-bar"><div class="risk-fill" id="k-fill"></div></div>
-        <div class="risk-tag" id="k-tag"></div>
+        <span class="risk-tag" id="k-tag">—</span>
         <div class="risk-detail" id="k-detail"></div>
       </div>
     </div>
-    <div class="risk-card hm-card" id="hm-card" style="display:none;margin-top:0">
-      <div class="risk-disease">🏥 Health Condition Breakdown</div>
-      <div class="hm-row" id="hm-row"></div>
+
+    <!-- AI Suggestions Box -->
+    <div class="card ai-card" id="ai-card" style="display:none">
+      <div class="card-title"><span>✨</span> AI Health Insights &amp; Improvement Plan</div>
+      <div class="ai-summary" id="ai-summary"></div>
+      <div class="ai-priority" id="ai-priority" style="display:none"></div>
+      <div class="ai-grid" id="ai-grid"></div>
+    </div>
+
+    <!-- SHAP Biomarker Contributions -->
+    <div class="card shap-card" id="shap-card" style="display:none">
+      <div class="card-title"><span>📊</span> Key Biomarker Risk Contributors (SHAP)</div>
+      <div class="shap-grid" id="shap-grid"></div>
     </div>
   </div>
 </div>
+
 <div class="toast" id="toast"></div>
 
 <script>
-let pdfValues = {};
-const NUMERIC_INPUT_IDS = ["glucose","bgr","hba1c","insulin","chol","ldl","hdl","triglycerides","sc","bu","egfr","sod","pot"];
-const CAT_FIELDS = ["htn","dm","cad","appet","pe","ane"];
 const $ = id => document.getElementById(id);
+let pdfValues = {};
+let uploadedReportId = null;
+
+function toggleTheme() {
+  const current = document.documentElement.getAttribute("data-theme") || "dark";
+  const next = current === "dark" ? "light" : "dark";
+  document.documentElement.setAttribute("data-theme", next);
+}
 
 function toast(msg, type="ok") {
-  const t = $("toast");
-  t.textContent = msg; t.className = "toast "+type+" show";
-  setTimeout(() => t.classList.remove("show"), 3500);
+  const t = $("toast"); t.textContent = msg; t.className = `toast show ${type}`;
+  setTimeout(() => t.className = "toast", 3500);
 }
-function numEl(id, fallback=null) {
-  const el = $(id); if (!el) return fallback;
-  const v = parseFloat(el.value); return isNaN(v) ? fallback : v;
-}
+
 function togglePreg() {
-  const show = $("sex").value === "0";
-  $("preg-field").style.display = show ? "flex" : "none";
-  $("preg-field").style.flexDirection = "column";
-  $("preg-field").style.gap = "6px";
+  const isFemale = $("sex").value === "0";
+  $("preg-field").style.display = isFemale ? "flex" : "none";
+  if (!isFemale) $("preg").value = "0";
 }
+
 function calcBMI() {
-  const h = numEl("height"), w = numEl("weight");
-  const pill = $("bmi-pill");
-  if (h > 0 && w > 0) { $("bmi-val").textContent = (w/Math.pow(h/100,2)).toFixed(1); pill.classList.remove("hidden"); }
-  else pill.classList.add("hidden");
+  const h = parseFloat($("height").value), w = parseFloat($("weight").value);
+  const pill = $("bmi-pill"), val = $("bmi-val");
+  if (h > 50 && w > 20) {
+    const bmi = (w / ((h/100)**2)).toFixed(1);
+    val.textContent = bmi;
+    pill.classList.remove("hidden");
+  } else {
+    pill.classList.add("hidden");
+  }
 }
+
+function numEl(id) {
+  const v = parseFloat($(id)?.value);
+  return isNaN(v) ? null : v;
+}
+
 function parseBP() {
-  const txt = ($("bp_text")?.value||"").trim();
-  const [a,b] = txt.split("/").map(p=>parseFloat(p.trim()));
-  return {systolic:isNaN(a)?null:a, diastolic:isNaN(b)?null:b};
+  const raw = ($("bp_text")?.value || "").trim();
+  const m = raw.match(/^(\d{2,3})\s*[\/\-]\s*(\d{2,3})$/);
+  if (m) return { systolic: parseInt(m[1]), diastolic: parseInt(m[2]) };
+  return { systolic: null, diastolic: null };
 }
+
 const FIELD_GROUPS = [
-  {label:"Glucose & Metabolic",fields:[
-    {key:"glucose",label:"Glucose (Fasting)",unit:"mg/dL"},
-    {key:"bgr",label:"Glucose (PP/Random)",unit:"mg/dL"},
-    {key:"hba1c",label:"HbA1c",unit:"%"},
-    {key:"insulin",label:"Insulin",unit:"µU/mL"},
-  ]},
-  {label:"Lipid Panel",fields:[
-    {key:"chol",label:"Total Cholesterol",unit:"mg/dL"},
-    {key:"ldl",label:"LDL",unit:"mg/dL"},
-    {key:"hdl",label:"HDL",unit:"mg/dL"},
-    {key:"triglycerides",label:"Triglycerides",unit:"mg/dL"},
-  ]},
-  {label:"Kidney Function",fields:[
-    {key:"sc",label:"Serum Creatinine",unit:"mg/dL"},
-    {key:"bu",label:"Blood Urea",unit:"mg/dL"},
-    {key:"sod",label:"Sodium",unit:"mEq/L"},
-    {key:"pot",label:"Potassium",unit:"mEq/L"},
-    {key:"egfr",label:"eGFR",unit:"mL/min"},
-  ]},
-  {label:"Clinical History",fields:[
-    {key:"htn",label:"Hypertension",unit:"1=yes"},
-    {key:"dm",label:"Diabetes (hx)",unit:"1=yes"},
-    {key:"cad",label:"CAD / IHD",unit:"1=yes"},
-    {key:"appet",label:"Appetite",unit:"1=good"},
-    {key:"pe",label:"Pedal Edema",unit:"1=yes"},
-    {key:"ane",label:"Anemia",unit:"1=yes"},
-  ]},
+  { label: "Blood Pressure", fields: [{ key: "systolic_bp", label: "Systolic BP", unit: "mmHg" }, { key: "diastolic_bp", label: "Diastolic BP", unit: "mmHg" }] },
+  { label: "Glycemic Panel", fields: [{ key: "glucose", label: "Fasting Glucose", unit: "mg/dL" }, { key: "bgr", label: "Random Blood Glucose", unit: "mg/dL" }, { key: "hba1c", label: "HbA1c", unit: "%" }, { key: "insulin", label: "Insulin", unit: "µU/mL" }] },
+  { label: "Lipid Profile", fields: [{ key: "chol", label: "Total Cholesterol", unit: "mg/dL" }, { key: "ldl", label: "LDL", unit: "mg/dL" }, { key: "hdl", label: "HDL", unit: "mg/dL" }, { key: "triglycerides", label: "Triglycerides", unit: "mg/dL" }] },
+  { label: "Renal Function", fields: [{ key: "sc", label: "Serum Creatinine", unit: "mg/dL" }, { key: "bu", label: "Blood Urea", unit: "mg/dL" }, { key: "sod", label: "Sodium", unit: "mEq/L" }, { key: "pot", label: "Potassium", unit: "mEq/L" }] }
 ];
 
+const NUMERIC_INPUT_IDS = ["glucose","bgr","hba1c","insulin","chol","ldl","hdl","triglycerides","sc","bu","sod","pot","thalach"];
+const CAT_FIELDS = ["htn","dm","cad","appet","pe","ane"];
+
 async function handlePDF(file) {
-  $("pdfZoneText").textContent = "⏳ Parsing…";
+  $("pdfZoneText").textContent = "Analyzing report with AI…";
   const fd = new FormData(); fd.append("file", file);
   try {
-    const res = await fetch("/parse-pdf", {method:"POST",body:fd});
+    const res = await fetch("/parse-pdf", { method: "POST", body: fd });
     const data = await res.json();
-    if (!data.success) throw new Error(data.error);
+    if (!data.success) throw new Error(data.error?.message || "PDF parse failed");
     const vals = data.extracted || {};
-    pdfValues = {};
-    NUMERIC_INPUT_IDS.forEach(field => {
-      const el = $(field); if (!el) return;
-      if (vals[field] !== undefined) { el.value = vals[field]; el.classList.add("from-pdf"); }
+    uploadedReportId = data.report_id || null;
+    
+    NUMERIC_INPUT_IDS.forEach(f => {
+      if (vals[f] !== undefined && $(f)) {
+        $(f).value = vals[f];
+        $(f).classList.add("from-pdf");
+      }
     });
     if (vals.systolic_bp || vals.diastolic_bp) {
       $("bp_text").value = `${vals.systolic_bp||120}/${vals.diastolic_bp||80}`;
@@ -352,12 +395,14 @@ async function handlePDF(file) {
     }
     if (vals.age) { $("age").value = vals.age; $("age").classList.add("from-pdf"); }
     CAT_FIELDS.forEach(f => { if (vals[f] !== undefined) pdfValues[f] = vals[f]; });
+    
     const badge = $("method-badge");
     badge.classList.remove("hidden","claude","regex");
-    if (data.method === "claude_api") { badge.textContent = "✦ AI Extracted"; badge.classList.add("claude"); }
-    else { badge.textContent = "⊛ Regex Parsed"; badge.classList.add("regex"); }
+    if (data.method === "gemini_ai") { badge.textContent = "✦ Gemini AI"; badge.classList.add("claude"); }
+    else { badge.textContent = "⊛ Pattern Matching"; badge.classList.add("regex"); }
+    
     renderExtracted(vals);
-    $("pdfZoneText").textContent = `✓ Report loaded — ${data.count} values found`;
+    $("pdfZoneText").textContent = `✓ Report loaded — ${data.count} values extracted`;
     toast(`✓ ${data.count} values extracted from PDF`, "ok");
   } catch(err) {
     $("pdfZoneText").textContent = "Upload your lab report";
@@ -395,8 +440,8 @@ pdfZone.addEventListener("drop", e => {
   if (f?.type==="application/pdf") handlePDF(f); else toast("Please drop a PDF file","err");
 });
 
-function riskClass(p) { return p<33?"low":p<66?"mid":"high"; }
-function riskLabel(p) { return p<33?"Low Risk":p<66?"Moderate Risk":"High Risk"; }
+function riskClass(p) { return p<30?"low":p<55?"mid":"high"; }
+function riskLabel(p) { return p<30?"Low Risk":p<55?"Moderate Risk":"High Risk"; }
 
 function renderRisk(numId, fillId, tagId, pct) {
   const c = riskClass(pct);
@@ -406,22 +451,67 @@ function renderRisk(numId, fillId, tagId, pct) {
   setTimeout(() => fill.style.width = Math.min(pct,100)+"%", 80);
   const tag = $(tagId); tag.textContent = riskLabel(pct); tag.className = `risk-tag tag-${c}`;
 }
+
 function renderDetail(detailId, detail) {
   const el = $(detailId); if (!el||!detail) return;
   el.innerHTML = `<span class="detail-pill">ML ${detail.ml}%</span><span class="detail-pill">Clinical ${detail.clinical}/100</span>`;
 }
-function renderHealthCondition(hm) {
-  const card = $("hm-card"), row = $("hm-row");
-  if (!hm||Object.keys(hm).length===0) { card.style.display="none"; return; }
-  card.style.display="block"; row.innerHTML="";
-  Object.entries(hm).sort((a,b)=>b[1]-a[1]).forEach(([cond,pct]) => {
-    const item = document.createElement("div"); item.className="hm-item";
-    item.innerHTML=`<span class="hm-label">${cond.replace(/_/g," ")}</span>
-      <div class="hm-bar-wrap"><div class="hm-bar-fill" style="width:0%" data-pct="${pct}"></div></div>
-      <span class="hm-pct">${pct.toFixed(0)}%</span>`;
-    row.appendChild(item);
+
+function renderAISuggestions(sugg) {
+  const card = $("ai-card");
+  if (!sugg || !sugg.summary) { card.style.display = "none"; return; }
+  card.style.display = "block";
+  $("ai-summary").textContent = sugg.summary;
+  
+  const pri = $("ai-priority");
+  if (sugg.top_priority) {
+    pri.style.display = "block";
+    pri.innerHTML = `<strong>Top Priority Action:</strong> ${sugg.top_priority}`;
+  } else {
+    pri.style.display = "none";
+  }
+
+  const grid = $("ai-grid"); grid.innerHTML = "";
+  (sugg.lifestyle_suggestions || []).forEach(item => {
+    const div = document.createElement("div"); div.className = "ai-item";
+    let actionsHtml = "";
+    if (item.action_items && item.action_items.length) {
+      actionsHtml = `<ul class="ai-checklist">${item.action_items.map(a => `<li>${a}</li>`).join("")}</ul>`;
+    }
+    div.innerHTML = `
+      <div class="ai-item-hdr">
+        <span class="ai-item-title">${item.category}: ${item.title}</span>
+        <span class="ai-item-badge">${item.priority}</span>
+      </div>
+      <p class="ai-item-desc">${item.advice}</p>
+      ${actionsHtml}
+    `;
+    grid.appendChild(div);
   });
-  setTimeout(() => row.querySelectorAll(".hm-bar-fill").forEach(el => { el.style.width=Math.min(parseFloat(el.dataset.pct),100)+"%"; }), 100);
+}
+
+function renderSHAP(exp) {
+  const card = $("shap-card");
+  if (!exp || !exp.top_features) { card.style.display = "none"; return; }
+  card.style.display = "block";
+  const grid = $("shap-grid"); grid.innerHTML = "";
+
+  ["heart", "diabetes", "kidney"].forEach(disease => {
+    const feats = exp.top_features[disease] || [];
+    if (!feats.length) return;
+    const box = document.createElement("div"); box.className = "shap-box";
+    box.innerHTML = `<div class="shap-title">${disease.toUpperCase()} Biomarker Drivers</div>`;
+    feats.slice(0, 4).forEach(f => {
+      const isPos = f.contribution > 0;
+      box.innerHTML += `
+        <div class="shap-row">
+          <span>${f.feature.toUpperCase()} (${f.value})</span>
+          <span class="${isPos ? 'shap-val-pos' : 'shap-val-neg'}">${isPos ? '+' : ''}${f.contribution.toFixed(3)}</span>
+        </div>
+      `;
+    });
+    grid.appendChild(box);
+  });
 }
 
 async function runPredict() {
@@ -431,35 +521,57 @@ async function runPredict() {
   if (!bp.systolic||!bp.diastolic) { toast("Please enter valid blood pressure (e.g. 120/80)","err"); return; }
   const h = numEl("height"), w = numEl("weight");
   if (!h||!w) { toast("Please enter height and weight for BMI","err"); return; }
+  
   btn.disabled=true; $("spinner").style.display="block"; $("btn-text").textContent="Analysing…";
-  const payload = {age, sex:parseInt($("sex").value), systolic_bp:bp.systolic, diastolic_bp:bp.diastolic, height_cm:h, weight_kg:w, preg:numEl("preg")||0};
-  NUMERIC_INPUT_IDS.forEach(field => { const v=numEl(field); if(v!==null) payload[field]=v; });
-  CAT_FIELDS.forEach(f => { if(pdfValues[f]!==undefined) payload[f]=pdfValues[f]; });
+  
+  const payload = {
+    age,
+    sex: parseInt($("sex").value),
+    systolic_bp: bp.systolic,
+    diastolic_bp: bp.diastolic,
+    height_cm: h,
+    weight_kg: w,
+    preg: numEl("preg")||0,
+    report_id: uploadedReportId
+  };
+  
+  NUMERIC_INPUT_IDS.forEach(field => { const v = numEl(field); if (v !== null) payload[field] = v; });
+  CAT_FIELDS.forEach(f => { if (pdfValues[f] !== undefined) payload[f] = pdfValues[f]; });
+
   try {
-    const res = await fetch("/predict",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
+    const res = await fetch("/predict", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
     const data = await res.json();
-    if (!data.success) throw new Error(data.error||"Prediction failed");
-    $("results").style.display="block";
-    renderRisk("h-num","h-fill","h-tag",data.heart);
-    renderRisk("d-num","d-fill","d-tag",data.diabetes);
-    renderRisk("k-num","k-fill","k-tag",data.kidney);
+    if (!data.success) throw new Error(data.error?.message || data.error || "Prediction failed");
+
+    $("results").style.display = "block";
+    renderRisk("h-num", "h-fill", "h-tag", data.heart);
+    renderRisk("d-num", "d-fill", "d-tag", data.diabetes);
+    renderRisk("k-num", "k-fill", "k-tag", data.kidney);
+
     if (data.scores_detail) {
-      renderDetail("h-detail",data.scores_detail.heart);
-      renderDetail("d-detail",data.scores_detail.diabetes);
-      renderDetail("k-detail",data.scores_detail.kidney);
+      renderDetail("h-detail", data.scores_detail.heart);
+      renderDetail("d-detail", data.scores_detail.diabetes);
+      renderDetail("k-detail", data.scores_detail.kidney);
     }
-    renderHealthCondition(data.health_condition);
-    $("results").scrollIntoView({behavior:"smooth",block:"start"});
-    toast("✓ Analysis complete","ok");
+
+    renderAISuggestions(data.ai_suggestions);
+    renderSHAP(data.explainability);
+
+    $("results").scrollIntoView({ behavior: "smooth", block: "start" });
+    toast("✓ Analysis complete", "ok");
   } catch(err) {
-    toast(err.message.slice(0,100),"err"); console.error(err);
+    toast(err.message.slice(0, 100), "err"); console.error(err);
   } finally {
-    btn.disabled=false; $("spinner").style.display="none"; $("btn-text").textContent="🔬 Analyse Risk";
+    btn.disabled = false; $("spinner").style.display = "none"; $("btn-text").textContent = "🔬 Run Risk Analysis";
   }
 }
 
-window.addEventListener("DOMContentLoaded",() => {
-  document.querySelectorAll("input").forEach(el => el.addEventListener("keydown", e => { if(e.key==="Enter") runPredict(); }));
+window.addEventListener("DOMContentLoaded", () => {
+  document.querySelectorAll("input").forEach(el => el.addEventListener("keydown", e => { if(e.key === "Enter") runPredict(); }));
 });
 </script>
 </body>

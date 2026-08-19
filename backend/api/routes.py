@@ -1,6 +1,6 @@
 import time
 import traceback as _tb
-from flask import Blueprint, request, jsonify, send_from_directory, current_app
+from flask import Blueprint, request, jsonify, send_from_directory, current_app, send_file
 
 from backend.app.config import Config
 from backend.utils.validators import validate_patient_data, validate_pdf_file
@@ -8,6 +8,9 @@ from backend.utils.exceptions import ValidationError, PDFParsingError, Predictio
 from backend.utils.logger import get_logger
 from backend.auth.decorators import login_required
 from backend.services.history_service import history_service
+from backend.services.notification_service import notification_service
+from backend.services.pdf_export_service import pdf_export_service
+from backend.services.simulation_service import simulation_service
 from predict import predict_all
 from backend.utils.pdf_parser import extract_with_gemini, extract_with_regex, sanity_check
 
@@ -35,6 +38,10 @@ def predict_legacy():
 @root_bp.route("/parse-pdf", methods=["POST"])
 def parse_pdf_legacy():
     return _parse_pdf_logic()
+
+@root_bp.route("/simulate", methods=["POST"])
+def simulate_legacy():
+    return _simulate_logic()
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -108,6 +115,14 @@ def predict_v1():
         description: Internal Server Error
     """
     return _predict_logic()
+
+
+@api_bp.route("/simulate", methods=["POST"])
+def simulate_v1():
+    """
+    Interactive What-If lifestyle risk reduction simulation
+    """
+    return _simulate_logic()
 
 
 @api_bp.route("/parse-pdf", methods=["POST"])
@@ -211,6 +226,75 @@ def delete_history_v1(prediction_id):
     return jsonify({"success": True}), 200
 
 
+@api_bp.route("/history/<prediction_id>/export-pdf", methods=["GET"])
+@login_required
+def export_history_pdf_v1(prediction_id):
+    """
+    Generate and download clinical PDF report for a prediction record
+    """
+    from flask import g
+    user_id = g.user.user_id
+    
+    detail = history_service.get_history_detail(user_id, prediction_id)
+    if not detail:
+        return jsonify({"error": "Prediction record not found"}), 404
+        
+    try:
+        pdf_buffer = pdf_export_service.generate_prediction_pdf(detail)
+        return send_file(
+            pdf_buffer,
+            mimetype="application/pdf",
+            as_attachment=True,
+            download_name=f"MDRP_Medical_Report_{prediction_id[:8]}.pdf"
+        )
+    except Exception as e:
+        logger.exception(f"Failed to generate PDF for {prediction_id}: {e}")
+        return jsonify({"error": "Failed to generate PDF report"}), 500
+
+
+@api_bp.route("/notifications", methods=["GET"])
+@login_required
+def get_notifications_v1():
+    """
+    Get in-app notifications and unread count for current user
+    """
+    from flask import g
+    user_id = g.user.user_id
+    unread_only = request.args.get("unread_only", "false").lower() == "true"
+    limit = request.args.get("limit", 20, type=int)
+
+    items, unread_count = notification_service.get_user_notifications(user_id, unread_only=unread_only, limit=limit)
+    return jsonify({
+        "items": items,
+        "unread_count": unread_count,
+        "total": len(items)
+    }), 200
+
+
+@api_bp.route("/notifications/<notification_id>/read", methods=["POST"])
+@login_required
+def mark_notification_read_v1(notification_id):
+    """
+    Mark specific notification as read
+    """
+    from flask import g
+    user_id = g.user.user_id
+    success = notification_service.mark_as_read(user_id, notification_id)
+    return jsonify({"success": success}), 200 if success else 404
+
+
+@api_bp.route("/notifications/read-all", methods=["POST"])
+@login_required
+def mark_all_notifications_read_v1():
+    """
+    Mark all notifications as read for current user
+    """
+    from flask import g
+    user_id = g.user.user_id
+    count = notification_service.mark_all_as_read(user_id)
+    return jsonify({"success": True, "updated_count": count}), 200
+
+
 @api_bp.route("/logs", methods=["POST"])
 def receive_frontend_logs():
     """
@@ -263,17 +347,21 @@ def _predict_logic():
         # Proceed to prediction orchestration
         results = predict_all(patient_data)
         
-        # --- Save Prediction to DB via Service ---
+        # --- Save Prediction to DB via Service & Dispatch Alerts ---
         from flask import g
-        # Support cases without clerk middleware running or test environments
-        user_id = getattr(g, "user", None) and g.user.user_id
+        user_id = (getattr(g, "user", None) and g.user.user_id) or request.headers.get("X-User-Id") or data.get("user_id")
+        report_id = data.get("report_id") or data.get("uploaded_report_id")
         
         if user_id:
             try:
-                prediction_id = history_service.save_prediction_result(user_id, results, patient_data)
+                prediction_id = history_service.save_prediction_result(user_id, results, patient_data, report_id=report_id)
                 results["prediction_id"] = prediction_id
+                notification_service.dispatch_prediction_notifications(user_id, prediction_id, results)
+                logger.info(f"Persisted prediction {prediction_id} for user {user_id}")
             except Exception as e:
-                logger.error(f"Failed to persist prediction: {e}")
+                logger.error(f"Failed to persist prediction / dispatch notifications: {e}")
+        else:
+            logger.warning("Prediction executed without authenticated user_id; record was not persisted to history")
         # -----------------------------
 
         duration_ms = (time.time() - start_time) * 1000
@@ -290,6 +378,7 @@ def _predict_logic():
             "health_condition": results.get("health_condition", {}),
             "used_defaults":    results.get("used_defaults", []),
             "explainability":   results.get("explainability", {}),
+            "ai_suggestions":   results.get("ai_suggestions", {}),
             "prediction_id":    results.get("prediction_id"),
         })
 
@@ -360,6 +449,29 @@ def _parse_pdf_logic():
 
         cleaned = sanity_check(extracted)
         
+        # ── Save Uploaded Report to Database & Notify ──────────────────────
+        from flask import g
+        user_id = (getattr(g, "user", None) and g.user.user_id) or request.headers.get("X-User-Id")
+        report_id = None
+        try:
+            report_id = history_service.save_uploaded_report(
+                clerk_id=user_id,
+                filename=file.filename,
+                parsed_data=cleaned,
+                method=method,
+                file_size=len(pdf_bytes)
+            )
+            if user_id:
+                notification_service.dispatch_pdf_parsed_notification(
+                    clerk_id=user_id,
+                    report_id=report_id,
+                    filename=file.filename,
+                    field_count=len(cleaned),
+                    method=method
+                )
+        except Exception as e:
+            logger.error(f"Failed to persist uploaded report / notify: {e}")
+
         duration_ms = (time.time() - start_time) * 1000
         logger.info(f"PDF parsed in {duration_ms:.0f} ms | filename={file.filename} | method={method} | fields_extracted={len(cleaned)}")
 
@@ -369,6 +481,7 @@ def _parse_pdf_logic():
             "count":      len(cleaned),
             "all_fields": list(cleaned.keys()),
             "method":     method,
+            "report_id":  report_id,
         })
 
     except PDFParsingError as e:
@@ -385,3 +498,47 @@ def _parse_pdf_logic():
         if current_app.config.get("MDRP_DEBUG"):
             resp["trace"] = _tb.format_exc()
         return jsonify(resp), 500
+
+
+def _simulate_logic():
+    try:
+        data = request.get_json(force=True, silent=True)
+        if not data:
+            raise ValidationError("request", "No JSON body received.")
+
+        base_inputs = data.get("base_inputs") or data.get("inputs") or {}
+        modifications = data.get("modifications") or {}
+        base_results = data.get("base_results") or data.get("results")
+
+        if not base_inputs:
+            raise ValidationError("base_inputs", "Baseline patient inputs required for simulation.")
+
+        # Clean baseline inputs with standard validator
+        validated_base = validate_patient_data(base_inputs)
+
+        sim_result = simulation_service.simulate_risk_reduction(
+            base_inputs=validated_base,
+            modifications=modifications,
+            base_results=base_results
+        )
+
+        return jsonify(sim_result), 200
+
+    except ValidationError as e:
+        return jsonify({
+            "success": False,
+            "error": {
+                "type": "ValidationError",
+                "field": e.field,
+                "message": e.message
+            }
+        }), 400
+    except Exception as exc:
+        logger.exception("Error in /simulate")
+        return jsonify({
+            "success": False,
+            "error": {
+                "type": "SimulationError",
+                "message": str(exc)
+            }
+        }), 500

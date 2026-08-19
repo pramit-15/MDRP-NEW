@@ -8,13 +8,35 @@ class PredictionRepository(BaseRepository[Prediction]):
     def __init__(self, session: Session):
         super().__init__(Prediction, session)
 
+    def save_uploaded_report(
+        self,
+        user_id: Optional[str],
+        filename: str,
+        parsed_data: dict,
+        method: Optional[str] = None,
+        raw_text: Optional[str] = None,
+        file_size: Optional[float] = None
+    ) -> UploadedReport:
+        rep = UploadedReport(
+            user_id=user_id,
+            filename=filename,
+            parsed_data=parsed_data,
+            method=method,
+            raw_text=raw_text,
+            file_size=file_size
+        )
+        self.session.add(rep)
+        self.session.flush()
+        return rep
+
     def save_prediction(
         self, 
         user_id: str, 
         results: dict, 
         inputs: dict, 
         explanation: dict = None,
-        uploaded_report: dict = None
+        uploaded_report: dict = None,
+        report_id: Optional[str] = None
     ) -> Prediction:
         # Construct prediction dict
         prediction_in = {
@@ -26,7 +48,8 @@ class PredictionRepository(BaseRepository[Prediction]):
             "scores_detail": results.get("scores_detail", {}),
             "clinical_scores": results.get("clinical_scores", {}),
             "inputs_used": inputs,
-            "used_defaults": results.get("used_defaults", [])
+            "used_defaults": results.get("used_defaults", []),
+            "ai_suggestions": results.get("ai_suggestions", {})
         }
         prediction = self.create(prediction_in)
         
@@ -45,12 +68,19 @@ class PredictionRepository(BaseRepository[Prediction]):
             )
             self.session.add(exp)
             
-        # Save uploaded report if provided
-        if uploaded_report:
+        # Link existing uploaded report if report_id provided
+        if report_id:
+            rep = self.session.get(UploadedReport, report_id)
+            if rep:
+                rep.prediction_id = prediction.id
+        elif uploaded_report:
             rep = UploadedReport(
                 prediction_id=prediction.id, 
-                filename=uploaded_report.get("filename"),
-                parsed_data=uploaded_report.get("parsed_data", {})
+                user_id=user_id,
+                filename=uploaded_report.get("filename", "report.pdf"),
+                parsed_data=uploaded_report.get("parsed_data", {}),
+                method=uploaded_report.get("method"),
+                raw_text=uploaded_report.get("raw_text")
             )
             self.session.add(rep)
             

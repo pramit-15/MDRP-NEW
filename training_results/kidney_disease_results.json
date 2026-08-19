@@ -1,0 +1,109 @@
+{
+  "disease_name": "Kidney Disease",
+  "dataset_path": "data/processed/kidney_processed.csv",
+  "model_output_path": "models/kidney_model.pkl",
+  "multiclass": false,
+  "training_duration_seconds": 3.9,
+  "train_samples": 320,
+  "test_samples": 80,
+  "features_count": 13,
+  "feature_names": [
+    "age",
+    "bp",
+    "bgr",
+    "bu",
+    "sc",
+    "sod",
+    "pot",
+    "htn",
+    "dm",
+    "cad",
+    "appet",
+    "pe",
+    "ane"
+  ],
+  "primary_selection_metric": "roc_auc",
+  "best_hyperparameters": {
+    "xgb": {
+      "subsample": 0.8,
+      "scale_pos_weight": 1.0,
+      "n_estimators": 50,
+      "min_child_weight": 1,
+      "max_depth": 5,
+      "learning_rate": 0.05,
+      "gamma": 0,
+      "colsample_bytree": 0.7
+    },
+    "rf": {
+      "n_estimators": 100,
+      "min_samples_split": 2,
+      "min_samples_leaf": 4,
+      "max_features": "sqrt",
+      "max_depth": 6,
+      "class_weight": null
+    },
+    "final_estimator": {
+      "C": 1.0,
+      "solver": "lbfgs",
+      "max_iter": 1000
+    }
+  },
+  "xgb_best_cv_score": 0.9962500000000001,
+  "rf_best_cv_score": 0.9972916666666667,
+  "cross_validation_metrics": {
+    "cv_roc_auc_mean": 0.9962500000000001,
+    "cv_roc_auc_std": 0.0026841872347344174,
+    "cv_accuracy_mean": 0.9625,
+    "cv_accuracy_std": 0.01875,
+    "cv_precision_mean": 0.984865540963102,
+    "cv_precision_std": 0.012365671334547162,
+    "cv_recall_mean": 0.9550000000000001,
+    "cv_recall_std": 0.03316624790355399,
+    "cv_f1_mean": 0.9692830294207155,
+    "cv_f1_std": 0.015806463220848957
+  },
+  "held_out_test_metrics": {
+    "test_roc_auc": 0.9993333333333333,
+    "test_accuracy": 0.975,
+    "test_precision": 0.98,
+    "test_recall": 0.98,
+    "test_f1": 0.98,
+    "confusion_matrix": [
+      [
+        29,
+        1
+      ],
+      [
+        1,
+        49
+      ]
+    ],
+    "classification_report": {
+      "0": {
+        "precision": 0.9666666666666667,
+        "recall": 0.9666666666666667,
+        "f1-score": 0.9666666666666667,
+        "support": 30.0
+      },
+      "1": {
+        "precision": 0.98,
+        "recall": 0.98,
+        "f1-score": 0.98,
+        "support": 50.0
+      },
+      "accuracy": 0.975,
+      "macro avg": {
+        "precision": 0.9733333333333334,
+        "recall": 0.9733333333333334,
+        "f1-score": 0.9733333333333334,
+        "support": 80.0
+      },
+      "weighted avg": {
+        "precision": 0.975,
+        "recall": 0.975,
+        "f1-score": 0.975,
+        "support": 80.0
+      }
+    }
+  }
+}

@@ -1,11 +1,12 @@
 "use client";
 
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import {
   Heart, Brain, Activity, CheckCircle2, AlertTriangle, AlertCircle,
-  Info, ArrowLeft, Printer, TrendingUp, TrendingDown, Minus, BarChart2
+  Info, ArrowLeft, Printer, TrendingUp, TrendingDown, Minus, BarChart2, Download, Loader2
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +16,8 @@ import { Progress } from "@/components/ui/progress";
 import type { HistoryDetail, PredictionResponse, ShapContribution, ExplainabilityResult } from "@/types";
 import { getRiskLevel, getRiskLabel, getRiskBgColor } from "@/types";
 import { formatFieldName } from "@/lib/utils";
+import { AIHealthSuggestions } from "./ai-health-suggestions";
+import { WhatIfSimulator } from "./what-if-simulator";
 import {
   BarChart,
   Bar,
@@ -447,6 +450,35 @@ export function PredictionResultView({
   const inputsUsed = result.inputs_used;
   const explainability = (result as PredictionResponse).explainability;
 
+  const [isDownloading, setIsDownloading] = useState(false);
+  const predictionId = (result as any).id || (result as any).prediction_id;
+
+  const handleDownloadPDF = async () => {
+    if (!predictionId) {
+      window.print();
+      return;
+    }
+    try {
+      setIsDownloading(true);
+      const res = await fetch(`/api/v1/history/${predictionId}/export-pdf`);
+      if (!res.ok) throw new Error("Failed to export PDF");
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `MDRP_Medical_Report_${predictionId.slice(0, 8)}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error("PDF export failed, falling back to print dialog:", e);
+      window.print();
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -460,9 +492,19 @@ export function PredictionResultView({
           </Link>
         )}
         <div className="flex items-center gap-2 ml-auto">
-          <Button variant="outline" size="sm" onClick={() => window.print()}>
-            <Printer className="h-4 w-4 mr-1" />
-            Export
+          <Button
+            variant="default"
+            size="sm"
+            onClick={handleDownloadPDF}
+            disabled={isDownloading}
+            className="gap-1.5 bg-blue-600 hover:bg-blue-700 text-white shadow-sm cursor-pointer"
+          >
+            {isDownloading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Download className="h-4 w-4" />
+            )}
+            Download PDF Report
           </Button>
         </div>
       </div>
@@ -535,6 +577,17 @@ export function PredictionResultView({
 
       {/* Score Breakdown */}
       {scoresDetail && <ScoreBreakdown scoresDetail={scoresDetail} />}
+
+      {/* AI-Powered Health Suggestions */}
+      {result.ai_suggestions && (
+        <AIHealthSuggestions suggestions={result.ai_suggestions} />
+      )}
+
+      {/* Interactive What-If Lifestyle Risk Simulator */}
+      <WhatIfSimulator
+        baselineInputs={(inputsUsed || {}) as Record<string, any>}
+        baselineResults={result}
+      />
 
       {/* SHAP Feature Contributions */}
       <FeatureContributions

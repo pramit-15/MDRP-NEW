@@ -14,6 +14,7 @@ import {
   AlertTriangle,
   ArrowRight,
   Calendar,
+  User as UserIcon,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -192,7 +193,7 @@ export default function DashboardPage() {
           { href: "/predictions/new", icon: PlusCircle, label: "New Prediction", color: "text-blue-600", bg: "bg-blue-600/10" },
           { href: "/upload", icon: Upload, label: "Upload PDF", color: "text-emerald-600", bg: "bg-emerald-600/10" },
           { href: "/history", icon: History, label: "View History", color: "text-purple-600", bg: "bg-purple-600/10" },
-          { href: "/profile", icon: Activity, label: "Health Profile", color: "text-amber-600", bg: "bg-amber-600/10" },
+          { href: "/profile", icon: UserIcon, label: "Account Profile", color: "text-amber-600", bg: "bg-amber-600/10" },
         ].map((action) => (
           <Link key={action.href} href={action.href}>
             <Card className="card-hover cursor-pointer h-full">

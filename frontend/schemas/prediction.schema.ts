@@ -58,19 +58,19 @@ export const vitalsSchema = z.object({
 
 // ─── Step 3: Lab Results ──────────────────────────────────────────────────────
 export const labResultsSchema = z.object({
-  glucose: z.number({ error: "Must be a number" }).min(40).max(700).optional().or(z.literal(undefined)),
-  bgr: z.number({ error: "Must be a number" }).min(40).max(700).optional().or(z.literal(undefined)),
-  hba1c: z.number({ error: "Must be a number" }).min(3.0).max(20.0).optional().or(z.literal(undefined)),
-  insulin: z.number({ error: "Must be a number" }).min(1).max(800).optional().or(z.literal(undefined)),
-  chol: z.number({ error: "Must be a number" }).min(80).max(500).optional().or(z.literal(undefined)),
-  ldl: z.number({ error: "Must be a number" }).min(20).max(400).optional().or(z.literal(undefined)),
-  hdl: z.number({ error: "Must be a number" }).min(10).max(150).optional().or(z.literal(undefined)),
-  triglycerides: z.number({ error: "Must be a number" }).min(20).max(1500).optional().or(z.literal(undefined)),
-  sc: z.number({ error: "Must be a number" }).min(0.2).max(20.0).optional().or(z.literal(undefined)),
-  bu: z.number({ error: "Must be a number" }).min(5).max(400).optional().or(z.literal(undefined)),
-  sod: z.number({ error: "Must be a number" }).min(100).max(175).optional().or(z.literal(undefined)),
-  pot: z.number({ error: "Must be a number" }).min(1.5).max(9.0).optional().or(z.literal(undefined)),
-  egfr: z.number({ error: "Must be a number" }).min(1).max(200).optional().or(z.literal(undefined)),
+  glucose: z.number({ error: "Must be a number" }).min(20).max(1000).optional().or(z.literal(undefined)),
+  bgr: z.number({ error: "Must be a number" }).min(20).max(1000).optional().or(z.literal(undefined)),
+  hba1c: z.number({ error: "Must be a number" }).min(2.0).max(25.0).optional().or(z.literal(undefined)),
+  insulin: z.number({ error: "Must be a number" }).min(0.5).max(1000).optional().or(z.literal(undefined)),
+  chol: z.number({ error: "Must be a number" }).min(40).max(800).optional().or(z.literal(undefined)),
+  ldl: z.number({ error: "Must be a number" }).min(10).max(600).optional().or(z.literal(undefined)),
+  hdl: z.number({ error: "Must be a number" }).min(5).max(250).optional().or(z.literal(undefined)),
+  triglycerides: z.number({ error: "Must be a number" }).min(10).max(3000).optional().or(z.literal(undefined)),
+  sc: z.number({ error: "Must be a number" }).min(0.1).max(30.0).optional().or(z.literal(undefined)),
+  bu: z.number({ error: "Must be a number" }).min(1).max(500).optional().or(z.literal(undefined)),
+  sod: z.number({ error: "Must be a number" }).min(80).max(200).optional().or(z.literal(undefined)),
+  pot: z.number({ error: "Must be a number" }).min(0.5).max(15.0).optional().or(z.literal(undefined)),
+  egfr: z.number({ error: "Must be a number" }).min(0).max(300).optional().or(z.literal(undefined)),
 });
 
 // ─── Step 4: Medical History ──────────────────────────────────────────────────

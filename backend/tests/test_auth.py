@@ -17,7 +17,7 @@ def test_missing_token(client):
 
 def test_invalid_token(client):
     """Test accessing protected route with invalid token."""
-    with patch('app.auth.auth_service.ClerkAuthService.verify_token') as mock_verify:
+    with patch('backend.auth.auth_service.ClerkAuthService.verify_token') as mock_verify:
         mock_verify.side_effect = ValueError("Invalid token")
         
         response = client.post('/api/v1/predict', headers={"Authorization": "Bearer invalid_token"}, json={})
@@ -26,7 +26,7 @@ def test_invalid_token(client):
 
 def test_expired_token(client):
     """Test accessing protected route with expired token."""
-    with patch('app.auth.auth_service.ClerkAuthService.verify_token') as mock_verify:
+    with patch('backend.auth.auth_service.ClerkAuthService.verify_token') as mock_verify:
         mock_verify.side_effect = ValueError("Token has expired")
         
         response = client.post('/api/v1/predict', headers={"Authorization": "Bearer expired_token"}, json={})
@@ -34,11 +34,11 @@ def test_expired_token(client):
 
 def test_valid_token_protected_route(client, auth_headers):
     """Test accessing protected route with valid token. Should pass auth and hit validation."""
-    with patch('app.auth.auth_service.ClerkAuthService.verify_token') as mock_verify:
+    with patch('backend.auth.auth_service.ClerkAuthService.verify_token') as mock_verify:
         mock_verify.return_value = CurrentUser(user_id="user_123", session_id="sess_123")
         
-        # We send invalid body just to trigger 400 validation error (which means auth passed)
-        response = client.post('/api/v1/predict', headers=auth_headers, json={})
+        # We send invalid age body just to trigger 400 validation error (which means auth passed)
+        response = client.post('/api/v1/predict', headers=auth_headers, json={"age": -1})
         assert response.status_code == 400
         assert response.json["error"]["type"] == "ValidationError"
 

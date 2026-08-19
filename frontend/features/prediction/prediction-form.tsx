@@ -2,16 +2,19 @@
 
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@clerk/nextjs";
 import { useForm } from "react-hook-form";
+import { useDropzone } from "react-dropzone";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import {
   User, Activity, FlaskConical, ClipboardList, CheckCircle2,
-  ChevronLeft, ChevronRight, Info, Calculator
+  ChevronLeft, ChevronRight, Info, Calculator, Upload, FileText, Sparkles, Loader2, X
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -20,6 +23,7 @@ import { Progress } from "@/components/ui/progress";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 import { usePredictMutation } from "@/hooks/use-predictions";
+import { parsePdf, validatePdfFile } from "@/services/upload.service";
 import { calculateBMI } from "@/lib/utils";
 import { predictionSchema, type PredictionFormData } from "@/schemas/prediction.schema";
 import type { ParsedPdfFields } from "@/types";
@@ -549,8 +553,17 @@ function mapPdfPrefill(prefillData?: ParsedPdfFields): Partial<PredictionFormDat
 export function PredictionForm({ prefillData }: PredictionFormProps) {
   const [step, setStep] = useState(1);
   const router = useRouter();
+  const { getToken } = useAuth();
   const { mutateAsync: predict, isPending } = usePredictMutation();
   const prefillValues = useMemo(() => mapPdfPrefill(prefillData), [prefillData]);
+
+  // Inline PDF upload state
+  const [isUploadingPdf, setIsUploadingPdf] = useState(false);
+  const [pdfSuccessBanner, setPdfSuccessBanner] = useState<{
+    filename: string;
+    count: number;
+    method: string;
+  } | null>(null);
 
   const form = useForm<PredictionFormData>({
     resolver: zodResolver(predictionSchema),
@@ -563,6 +576,45 @@ export function PredictionForm({ prefillData }: PredictionFormProps) {
       form.reset(prefillValues);
     }
   }, [form, prefillData, prefillValues]);
+
+  const handleInlinePdfUpload = useCallback(async (file: File) => {
+    const err = validatePdfFile(file);
+    if (err) {
+      toast.error(err);
+      return;
+    }
+
+    setIsUploadingPdf(true);
+    try {
+      const token = await getToken();
+      const res = await parsePdf(token || "", file);
+      if (res.success && res.extracted) {
+        const mapped = mapPdfPrefill(res.extracted);
+        form.reset({ ...form.getValues(), ...mapped });
+        if (res.report_id) {
+          sessionStorage.setItem("uploaded_report_id", res.report_id);
+        }
+        setPdfSuccessBanner({
+          filename: file.name,
+          count: res.count,
+          method: res.method === "gemini_ai" ? "Gemini AI" : "Pattern Matching",
+        });
+        toast.success(`Extracted ${res.count} biomarkers from ${file.name}!`);
+      }
+    } catch (e: any) {
+      toast.error(e?.response?.data?.error?.message || "Failed to parse PDF report");
+    } finally {
+      setIsUploadingPdf(false);
+    }
+  }, [form, getToken]);
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop: (acceptedFiles) => {
+      if (acceptedFiles[0]) handleInlinePdfUpload(acceptedFiles[0]);
+    },
+    accept: { "application/pdf": [".pdf"] },
+    maxFiles: 1,
+  });
 
   const handleNext = useCallback(async () => {
     if (step < 5) setStep((s) => s + 1);
@@ -618,8 +670,17 @@ export function PredictionForm({ prefillData }: PredictionFormProps) {
       return;
     }
 
+    // Attach uploaded report linkage if present
+    const uploadedReportId = typeof window !== "undefined" ? sessionStorage.getItem("uploaded_report_id") : null;
+    if (uploadedReportId) {
+      clean.report_id = uploadedReportId;
+    }
+
     try {
       const result = await predict(clean);
+      if (typeof window !== "undefined") {
+        sessionStorage.removeItem("uploaded_report_id");
+      }
       if (result.success && result.prediction_id) {
         router.push(`/history/${result.prediction_id}`);
       } else if (result.success) {
@@ -635,7 +696,71 @@ export function PredictionForm({ prefillData }: PredictionFormProps) {
   const progress = (step / STEPS.length) * 100;
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="max-w-2xl mx-auto space-y-6">
+      {/* Integrated PDF Quick Upload Card */}
+      {step === 1 && !pdfSuccessBanner && (
+        <div
+          {...getRootProps()}
+          className={`p-4 rounded-xl border-2 border-dashed transition-all cursor-pointer ${
+            isDragActive
+              ? "border-blue-500 bg-blue-500/10"
+              : "border-border/80 bg-muted/20 hover:border-blue-400 hover:bg-muted/40"
+          }`}
+        >
+          <input {...getInputProps()} />
+          <div className="flex items-center gap-3.5">
+            <div className="h-10 w-10 rounded-xl bg-blue-600/10 flex items-center justify-center shrink-0">
+              {isUploadingPdf ? (
+                <Loader2 className="h-5 w-5 text-blue-600 animate-spin" />
+              ) : (
+                <Upload className="h-5 w-5 text-blue-600" />
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold text-foreground">
+                {isUploadingPdf ? "Parsing lab report with AI..." : "Have a lab report PDF? Drop it here"}
+              </p>
+              <p className="text-[11px] text-muted-foreground truncate">
+                Auto-fills blood pressure, glucose, lipids, and kidney values instantly with Gemini AI.
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={isUploadingPdf}
+              className="text-xs shrink-0"
+            >
+              Browse PDF
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* PDF Success Banner */}
+      {pdfSuccessBanner && (
+        <div className="flex items-center justify-between p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-300 dark:border-emerald-800 text-xs">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
+            <span>
+              <strong>{pdfSuccessBanner.count} biomarkers extracted</strong> from{" "}
+              <span className="font-mono text-emerald-700 dark:text-emerald-400">
+                {pdfSuccessBanner.filename}
+              </span>{" "}
+              via {pdfSuccessBanner.method}. Form fields pre-filled!
+            </span>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setPdfSuccessBanner(null)}
+            className="h-6 w-6 text-muted-foreground hover:text-foreground"
+          >
+            <X className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      )}
+
       {/* Progress Header */}
       <div className="mb-8">
         <div className="flex items-center justify-between mb-4">

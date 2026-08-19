@@ -8,6 +8,7 @@ import { useTheme } from "@/providers/theme-provider";
 import { Button } from "@/components/ui/button";
 import { useHealthCheck } from "@/hooks/use-health";
 import { cn } from "@/lib/utils";
+import { NotificationBell } from "@/components/shared/notification-bell";
 
 function Breadcrumbs() {
   const pathname = usePathname();
@@ -88,6 +89,9 @@ export function Navbar() {
 
       <div className="ml-auto flex items-center gap-3">
         <ApiStatus />
+
+        {/* Notifications */}
+        <NotificationBell />
 
         {/* Theme Toggle */}
         <Button

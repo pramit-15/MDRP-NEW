@@ -1,0 +1,109 @@
+{
+  "disease_name": "Heart Disease",
+  "dataset_path": "data/processed/heart_processed.csv",
+  "model_output_path": "models/heart_model.pkl",
+  "multiclass": false,
+  "training_duration_seconds": 10.69,
+  "train_samples": 820,
+  "test_samples": 205,
+  "features_count": 13,
+  "feature_names": [
+    "age",
+    "sex",
+    "cp",
+    "trestbps",
+    "chol",
+    "fbs",
+    "restecg",
+    "thalach",
+    "exang",
+    "oldpeak",
+    "slope",
+    "ca",
+    "thal"
+  ],
+  "primary_selection_metric": "roc_auc",
+  "best_hyperparameters": {
+    "xgb": {
+      "subsample": 0.9,
+      "scale_pos_weight": 1.0,
+      "n_estimators": 200,
+      "min_child_weight": 1,
+      "max_depth": 6,
+      "learning_rate": 0.03,
+      "gamma": 0.05,
+      "colsample_bytree": 0.8
+    },
+    "rf": {
+      "n_estimators": 200,
+      "min_samples_split": 2,
+      "min_samples_leaf": 1,
+      "max_features": "sqrt",
+      "max_depth": null,
+      "class_weight": "balanced"
+    },
+    "final_estimator": {
+      "C": 1.0,
+      "solver": "lbfgs",
+      "max_iter": 1000
+    }
+  },
+  "xgb_best_cv_score": 0.9950892192319968,
+  "rf_best_cv_score": 0.9986309302201892,
+  "cross_validation_metrics": {
+    "cv_roc_auc_mean": 0.9980951937737121,
+    "cv_roc_auc_std": 0.002522545585438773,
+    "cv_accuracy_mean": 0.9829268292682928,
+    "cv_accuracy_std": 0.014116874271695409,
+    "cv_precision_mean": 0.9815604147679835,
+    "cv_precision_std": 0.02091013080422305,
+    "cv_recall_mean": 0.9857142857142858,
+    "cv_recall_std": 0.01904761904761907,
+    "cv_f1_mean": 0.9834115083190484,
+    "cv_f1_std": 0.01374923998109701
+  },
+  "held_out_test_metrics": {
+    "test_roc_auc": 0.9999999999999999,
+    "test_accuracy": 1.0,
+    "test_precision": 1.0,
+    "test_recall": 1.0,
+    "test_f1": 1.0,
+    "confusion_matrix": [
+      [
+        100,
+        0
+      ],
+      [
+        0,
+        105
+      ]
+    ],
+    "classification_report": {
+      "0": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 100.0
+      },
+      "1": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 105.0
+      },
+      "accuracy": 1.0,
+      "macro avg": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 205.0
+      },
+      "weighted avg": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1-score": 1.0,
+        "support": 205.0
+      }
+    }
+  }
+}

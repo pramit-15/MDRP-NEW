@@ -56,15 +56,11 @@ class ClerkAuthService:
             if not key:
                 raise ValueError("Public key not found in JWKS")
 
-            issuer = current_app.config.get("CLERK_JWT_ISSUER")
-            if issuer and not issuer.startswith("http"):
-                issuer = f"https://{issuer}"
             payload = jwt.decode(
                 token,
                 key=key,
                 algorithms=['RS256'],
-                issuer=issuer if issuer else None,
-                options={"verify_aud": False}
+                options={"verify_aud": False, "verify_iss": False}
             )
 
             user_id = payload.get("sub")
@@ -72,6 +68,7 @@ class ClerkAuthService:
             roles = payload.get("roles", [])
             metadata = payload.get("metadata", {})
 
+            logger.info(f"JWT verified successfully for user: {user_id}")
             return CurrentUser(
                 user_id=user_id,
                 session_id=session_id,

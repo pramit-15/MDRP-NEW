@@ -1,5 +1,6 @@
 "use client";
 
+import React, { useState } from "react";
 import { useTheme } from "@/providers/theme-provider";
 import { Monitor, Moon, Sun, Settings2, Server, Shield, Bell } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -121,22 +122,40 @@ export default function SettingsPage() {
             <Bell className="h-4 w-4 text-blue-600" />
             Notifications
           </CardTitle>
-          <CardDescription>Manage how you receive updates</CardDescription>
+          <CardDescription>Manage how you receive in-app alerts and updates</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {[
             { id: "prediction-complete", label: "Prediction Complete", desc: "Get notified when a prediction finishes" },
             { id: "pdf-parsed", label: "PDF Parsed", desc: "Get notified when lab report extraction completes" },
-            { id: "risk-alerts", label: "High Risk Alerts", desc: "Alert me when risk scores exceed 70%" },
-          ].map((item) => (
-            <div key={item.id} className="flex items-center justify-between">
-              <div>
-                <Label htmlFor={item.id} className="text-sm cursor-pointer">{item.label}</Label>
-                <p className="text-xs text-muted-foreground">{item.desc}</p>
+            { id: "risk-alerts", label: "High Risk Alerts", desc: "Alert me when risk scores exceed 50%" },
+          ].map((item) => {
+            const storageKey = `mdrp_notif_${item.id}`;
+            const [checked, setChecked] = React.useState<boolean>(() => {
+              if (typeof window !== "undefined") {
+                const val = localStorage.getItem(storageKey);
+                return val !== null ? val === "true" : true;
+              }
+              return true;
+            });
+
+            const handleChange = (val: boolean) => {
+              setChecked(val);
+              if (typeof window !== "undefined") {
+                localStorage.setItem(storageKey, String(val));
+              }
+            };
+
+            return (
+              <div key={item.id} className="flex items-center justify-between">
+                <div>
+                  <Label htmlFor={item.id} className="text-sm cursor-pointer">{item.label}</Label>
+                  <p className="text-xs text-muted-foreground">{item.desc}</p>
+                </div>
+                <Switch id={item.id} checked={checked} onCheckedChange={handleChange} />
               </div>
-              <Switch id={item.id} defaultChecked={item.id === "risk-alerts"} />
-            </div>
-          ))}
+            );
+          })}
         </CardContent>
       </Card>
 

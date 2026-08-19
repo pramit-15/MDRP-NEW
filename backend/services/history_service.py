@@ -1,3 +1,4 @@
+from typing import Optional, Tuple, List, Dict, Any
 from backend.database import get_db_session
 from backend.repositories.user_repository import UserRepository
 from backend.repositories.prediction_repository import PredictionRepository
@@ -50,6 +51,7 @@ class HistoryService:
                 "clinical_scores": p.clinical_scores,
                 "inputs_used": p.inputs_used,
                 "used_defaults": p.used_defaults,
+                "ai_suggestions": getattr(p, "ai_suggestions", {}) or {},
                 "created_at": p.created_at.isoformat()
             }
             
@@ -76,7 +78,26 @@ class HistoryService:
             pred_repo = PredictionRepository(session)
             return pred_repo.delete_by_id_and_user(prediction_id, user.id)
             
-    def save_prediction_result(self, clerk_id: str, results: dict, patient_data: dict):
+    def save_uploaded_report(self, clerk_id: Optional[str], filename: str, parsed_data: dict, method: str = None, raw_text: str = None, file_size: float = None) -> Optional[str]:
+        with get_db_session() as session:
+            user_id = None
+            if clerk_id:
+                user_repo = UserRepository(session)
+                user = user_repo.get_or_create(clerk_id)
+                user_id = user.id
+                
+            pred_repo = PredictionRepository(session)
+            rep = pred_repo.save_uploaded_report(
+                user_id=user_id,
+                filename=filename,
+                parsed_data=parsed_data,
+                method=method,
+                raw_text=raw_text,
+                file_size=file_size
+            )
+            return str(rep.id)
+
+    def save_prediction_result(self, clerk_id: str, results: dict, patient_data: dict, report_id: Optional[str] = None):
         with get_db_session() as session:
             user_repo = UserRepository(session)
             user = user_repo.get_or_create(clerk_id)
@@ -86,7 +107,8 @@ class HistoryService:
                 user_id=user.id,
                 results=results,
                 inputs=patient_data,
-                explanation=results.get("explainability")
+                explanation=results.get("explainability"),
+                report_id=report_id
             )
             return str(pred.id)
 

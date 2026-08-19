@@ -35,15 +35,27 @@ class PredictionService:
             self.logger.exception(f"Explainability failed: {e}")
             explainability = {}
         
-        duration_ms = (time.time() - start_time) * 1000
-        self.logger.info(f"Prediction logic completed in {duration_ms:.0f} ms")
-        
+        # Build base response
         response = self._build_response(
             heart_risk, diabetes_risk, kidney_risk,
             heart_ml, diabetes_ml, kidney_ml,
             clinical, health_condition, used_defaults
         )
         response["explainability"] = explainability
+
+        # AI Health Suggestions (Gemini + Clinical Fallback)
+        try:
+            from backend.services.suggestion_service import suggestion_service
+            ai_suggestions = suggestion_service.generate_suggestions(response, full_input, explainability)
+        except Exception as e:
+            self.logger.exception(f"Suggestions generation failed: {e}")
+            ai_suggestions = {}
+
+        response["ai_suggestions"] = ai_suggestions
+
+        duration_ms = (time.time() - start_time) * 1000
+        self.logger.info(f"Prediction logic completed in {duration_ms:.0f} ms")
+        
         return response
 
     def _prepare_input(self, patient_data: dict):

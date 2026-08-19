@@ -14,8 +14,8 @@ def mock_loader():
     loader._classes = {}
     return loader
 
-@patch('app.services.model_loader.os.path.exists')
-@patch('app.services.model_loader.joblib.load')
+@patch('backend.services.model_loader.os.path.exists')
+@patch('backend.services.model_loader.joblib.load')
 def test_load_all_success(mock_joblib_load, mock_exists, mock_loader):
     mock_exists.return_value = True
     mock_joblib_load.return_value = MagicMock()
@@ -31,8 +31,8 @@ def test_load_all_success(mock_joblib_load, mock_exists, mock_loader):
     # joblib.load should be called for models, scalers, classes and features
     assert mock_joblib_load.call_count >= 10
 
-@patch('app.services.model_loader.os.path.exists')
-@patch('app.services.model_loader.joblib.load')
+@patch('backend.services.model_loader.os.path.exists')
+@patch('backend.services.model_loader.joblib.load')
 def test_load_all_missing_files(mock_joblib_load, mock_exists, mock_loader):
     mock_exists.return_value = False
     
@@ -47,8 +47,8 @@ def test_load_all_missing_files(mock_joblib_load, mock_exists, mock_loader):
     # Not called because files don't exist
     mock_joblib_load.assert_not_called()
 
-@patch('app.services.model_loader.os.path.exists')
-@patch('app.services.model_loader.joblib.load')
+@patch('backend.services.model_loader.os.path.exists')
+@patch('backend.services.model_loader.joblib.load')
 def test_safe_load_exception(mock_joblib_load, mock_exists, mock_loader):
     mock_exists.return_value = True
     mock_joblib_load.side_effect = Exception("Corrupt file")

@@ -1,14 +1,12 @@
 import pytest
 import io
-from api import app as flask_app
-from backend.app.config import Config
+from backend.app.factory import create_app
+from backend.app.config import TestingConfig
 
 @pytest.fixture
 def app():
     """Create and configure a new app instance for each test."""
-    flask_app.config.update({
-        "TESTING": True,
-    })
+    flask_app = create_app(TestingConfig)
     yield flask_app
 
 @pytest.fixture

@@ -73,7 +73,7 @@ def extract_with_gemini(raw_text: str, api_key: str) -> dict | None:
         prompt  = _GEMINI_PROMPT + raw_text
 
         response = client.models.generate_content(
-            model="gemini-2.0-flash",
+            model="gemini-3-flash-preview",
             contents=prompt,
         )
 

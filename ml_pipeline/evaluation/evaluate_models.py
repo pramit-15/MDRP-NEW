@@ -42,26 +42,34 @@ def evaluate(model_path: str, data_path: str, target: str, label: str = ""):
     probs = model.predict_proba(X_test)
     unique_classes = np.unique(y_test)
 
-    acc = accuracy_score(y_test, preds)
-    cm  = confusion_matrix(y_test, preds)
+    from sklearn.metrics import precision_score, recall_score, f1_score
+    acc  = accuracy_score(y_test, preds)
+    cm   = confusion_matrix(y_test, preds)
+    avg_mode = "macro" if len(unique_classes) > 2 else "binary"
+    prec = precision_score(y_test, preds, average=avg_mode, zero_division=0)
+    rec  = recall_score(y_test, preds, average=avg_mode, zero_division=0)
+    f1   = f1_score(y_test, preds, average=avg_mode, zero_division=0)
 
     logger.info(f"{'='*40}")
     logger.info(f"  {label or model_path}")
     logger.info(f"{'='*40}")
     logger.info(f"Accuracy : {acc:.4f}")
+    logger.info(f"Precision: {prec:.4f}")
+    logger.info(f"Recall   : {rec:.4f}")
+    logger.info(f"F1-Score : {f1:.4f}")
 
     if len(unique_classes) > 2:
         from sklearn.metrics import roc_auc_score
         roc_auc = roc_auc_score(y_test, probs, multi_class="ovr")
         logger.info(f"AUC (OVR): {roc_auc:.4f}")
         logger.info(f"Confusion Matrix:\n{cm}")
-        logger.info(f"Classification Report:\n{classification_report(y_test, preds)}")
+        logger.info(f"Classification Report:\n{classification_report(y_test, preds, zero_division=0)}")
     else:
         fpr, tpr, _ = roc_curve(y_test, probs[:, 1])
         roc_auc = auc(fpr, tpr)
         logger.info(f"AUC      : {roc_auc:.4f}")
         logger.info(f"Confusion Matrix:\n{cm}")
-        logger.info(f"Classification Report:\n{classification_report(y_test, preds)}")
+        logger.info(f"Classification Report:\n{classification_report(y_test, preds, zero_division=0)}")
         plt.plot(fpr, tpr, label=f"{label} AUC={roc_auc:.2f}")
 
 
