@@ -60,23 +60,41 @@ artifacts/           # Extra scripts and generated artifacts
 ### Setup
 ```bash
 # Clone repository
-git clone https://github.com/pramit1506/mdrp.git
-cd mdrp
+git clone https://github.com/pramit-15/MDRP-NEW.git
+cd MDRP-NEW
 
 # Create virtual environment
-python3 -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 
-# Install dependencies
+# Install backend dependencies
 pip install -r requirements.txt
 
-# Configure environment variables
+# Configure backend environment variables
 cp .env.example .env
 # Edit .env and supply required values
+
+# (Optional) Install frontend dependencies
+cd frontend
+npm install
+cp .env.example .env.local
+cd ..
+```
+
+## Datasets & ML Pipeline
+MDRP models are trained on public benchmark clinical datasets. To download or reproduce the datasets, refer to [data/README.md](data/README.md):
+- **Diabetes**: [UCI / Kaggle Pima Indians Diabetes Database](https://www.kaggle.com/datasets/uciml/pima-indians-diabetes-database)
+- **Heart Disease**: [UCI Heart Disease (Cleveland)](https://archive.ics.uci.edu/dataset/45/heart+disease) / [Kaggle Heart Disease Dataset](https://www.kaggle.com/datasets/johnsmith88/heart-disease-dataset)
+- **Chronic Kidney Disease**: [UCI Chronic Kidney Disease](https://archive.ics.uci.edu/dataset/336/chronic_kidney_disease) / [Kaggle CKD Dataset](https://www.kaggle.com/datasets/mansoordaku/ckdisease)
+
+```bash
+# Preprocess data and train ensemble models
+python ml_pipeline/preprocessing/preprocess.py
+python ml_pipeline/training/train_models.py
 ```
 
 ## Environment Variables
-The application requires several environment variables for API keys and configuration. Refer to `.env.example`:
+The application requires environment variables for API keys and configuration. Refer to `.env.example` (Backend) and `frontend/.env.example` (Frontend):
 
 - `FLASK_ENV`: Deployment environment (`development` or `production`)
 - `PORT`: Port for the application (default 5000)
